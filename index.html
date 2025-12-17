@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FIFA Draft</title>
+
+  <style>
+    body {
+      background: #0b0b0b;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+
+    h1 {
+      margin-top: 20px;
+    }
+
+    .pack, .team {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 20px;
+    }
+
+    img {
+      width: 90px;
+      cursor: pointer;
+      border-radius: 8px;
+    }
+
+    .slot {
+      width: 90px;
+      height: 140px;
+      border: 2px dashed #555;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>PACK</h1>
+<div class="pack" id="pack"></div>
+
+<h1>TEAM</h1>
+<div class="team" id="team"></div>
+
+<script>
+  const cards = [
+    "fifa-cards/marcelo10.png",
+    "fifa-cards/marcelo11.png",
+    "fifa-cards/marcelo12.png",
+    "fifa-cards/marcelo13.png",
+    "fifa-cards/vieira10.png",
+    "fifa-cards/vieira11.png",
+    "fifa-cards/vieira12.png",
+    "fifa-cards/vieira14.png"
+  ];
+
+  let deck = cards.sort(() => Math.random() - 0.5);
+  let selected = null;
+
+  const pack = document.getElementById("pack");
+  const team = document.getElementById("team");
+
+  function dealPack() {
+    pack.innerHTML = "";
+    deck.slice(0, 5).forEach(src => {
+      const img = document.createElement("img");
+      img.src = src;
+      img.onclick = () => selectCard(src, img);
+      pack.appendChild(img);
+    });
+  }
+
+  function selectCard(src, img) {
+    selected = src;
+    img.style.opacity = 0.3;
+  }
+
+  for (let i = 0; i < 11; i++) {
+    const slot = document.createElement("div");
+    slot.className = "slot";
+    slot.onclick = () => {
+      if (!selected || slot.innerHTML !== "") return;
+      const img = document.createElement("img");
+      img.src = selected;
+      slot.appendChild(img);
+      deck = deck.filter(c => c !== selected);
+      selected = null;
+      dealPack();
+    };
+    team.appendChild(slot);
+  }
+
+  dealPack();
+</script>
+
+</body>
+</html>
