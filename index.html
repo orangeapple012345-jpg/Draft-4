@@ -11,18 +11,17 @@
       font-family: Arial, sans-serif;
       text-align: center;
       margin: 0;
-      padding: 10px;
     }
 
     h1 {
       margin: 20px 0 10px;
     }
 
+    /* PACK */
     .pack {
       display: flex;
       justify-content: center;
       gap: 10px;
-      flex-wrap: wrap;
       margin-bottom: 30px;
     }
 
@@ -32,23 +31,21 @@
       cursor: pointer;
     }
 
-    .teams {
-      display: flex;
-      flex-direction: column;
-      gap: 60px;
+    .selected {
+      opacity: 0.4;
+      outline: 2px solid yellow;
     }
 
+    /* TEAMS */
     .team {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 14px;
+      margin-bottom: 50px;
     }
 
     .row {
       display: flex;
       justify-content: center;
       gap: 10px;
+      margin: 8px 0;
     }
 
     .slot {
@@ -61,8 +58,11 @@
     .slot img {
       width: 100%;
       height: 100%;
-      object-fit: cover;
       border-radius: 8px;
+    }
+
+    .gk-row {
+      margin-top: 10px;
     }
   </style>
 </head>
@@ -72,28 +72,14 @@
 <h1>PACK</h1>
 <div class="pack" id="pack"></div>
 
-<div class="teams">
+<h1>TEAM A</h1>
+<div class="team" id="teamA"></div>
 
-  <div class="team" id="teamA">
-    <h1>TEAM A</h1>
-    <div class="row" id="A-attack"></div>
-    <div class="row" id="A-mid"></div>
-    <div class="row" id="A-def"></div>
-    <div class="row" id="A-gk"></div>
-  </div>
-
-  <div class="team" id="teamB">
-    <h1>TEAM B</h1>
-    <div class="row" id="B-attack"></div>
-    <div class="row" id="B-mid"></div>
-    <div class="row" id="B-def"></div>
-    <div class="row" id="B-gk"></div>
-  </div>
-
-</div>
+<h1>TEAM B</h1>
+<div class="team" id="teamB"></div>
 
 <script>
-  const cards = [
+  const allCards = [
     "fifa-cards/marcelo10.png",
     "fifa-cards/marcelo11.png",
     "fifa-cards/marcelo12.png",
@@ -104,79 +90,81 @@
     "fifa-cards/vieira14.png"
   ];
 
-  let deck = [];
-  let packCards = [];
-  let selected = null;
+  let deck = [...allCards];
+  let currentPack = [];
+  let selectedCard = null;
   let picksThisRound = 0;
-  let currentTeam = "A";
 
   const packDiv = document.getElementById("pack");
 
-  function shuffle(array) {
-    return [...array].sort(() => Math.random() - 0.5);
+  function shuffle(arr) {
+    return arr.sort(() => Math.random() - 0.5);
   }
 
-  function dealNewPack() {
-    deck = shuffle(cards.filter(c => !usedCards.has(c)));
-    packCards = deck.slice(0, 5);
+  function dealPack() {
     packDiv.innerHTML = "";
+    picksThisRound = 0;
+    selectedCard = null;
 
-    packCards.forEach(src => {
+    shuffle(deck);
+    currentPack = deck.slice(0, 5);
+
+    currentPack.forEach(src => {
       const img = document.createElement("img");
       img.src = src;
-      img.onclick = () => selectCard(src, img);
+      img.onclick = () => selectCard(img, src);
       packDiv.appendChild(img);
     });
-
-    picksThisRound = 0;
-    currentTeam = "A";
   }
 
-  function selectCard(src, img) {
-    selected = src;
-    document.querySelectorAll(".pack img").forEach(i => i.style.opacity = "1");
-    img.style.opacity = "0.4";
+  function selectCard(img, src) {
+    document.querySelectorAll(".pack img").forEach(i => i.classList.remove("selected"));
+    img.classList.add("selected");
+    selectedCard = src;
   }
 
-  const usedCards = new Set();
+  function createTeam(containerId) {
+    const container = document.getElementById(containerId);
 
-  function createSlots(team, rowId, count) {
-    const row = document.getElementById(`${team}-${rowId}`);
-    for (let i = 0; i < count; i++) {
-      const slot = document.createElement("div");
-      slot.className = "slot";
-      slot.onclick = () => placeCard(slot);
-      row.appendChild(slot);
-    }
+    const layout = [3, 3, 4, 1]; // 4-3-3 + GK
+
+    layout.forEach((count, rowIndex) => {
+      const row = document.createElement("div");
+      row.className = "row";
+      if (count === 1) row.classList.add("gk-row");
+
+      for (let i = 0; i < count; i++) {
+        const slot = document.createElement("div");
+        slot.className = "slot";
+
+        slot.onclick = () => {
+          if (!selectedCard || slot.innerHTML !== "") return;
+
+          const img = document.createElement("img");
+          img.src = selectedCard;
+          slot.appendChild(img);
+
+          deck = deck.filter(c => c !== selectedCard);
+          selectedCard = null;
+          picksThisRound++;
+
+          document.querySelectorAll(".pack img").forEach(i => i.classList.remove("selected"));
+
+          if (picksThisRound === 2) {
+            dealPack();
+          }
+        };
+
+        row.appendChild(slot);
+      }
+
+      container.appendChild(row);
+    });
   }
 
-  function placeCard(slot) {
-    if (!selected || slot.innerHTML !== "") return;
-
-    const img = document.createElement("img");
-    img.src = selected;
-    slot.appendChild(img);
-
-    usedCards.add(selected);
-    selected = null;
-    picksThisRound++;
-
-    currentTeam = currentTeam === "A" ? "B" : "A";
-
-    if (picksThisRound === 2) {
-      dealNewPack();
-    }
-  }
-
-  // Build formations
-  ["A", "B"].forEach(team => {
-    createSlots(team, "attack", 3);
-    createSlots(team, "mid", 3);
-    createSlots(team, "def", 4);
-    createSlots(team, "gk", 1);
-  });
-
-  dealNewPack();
+  createTeam("teamA");
+  createTeam("teamB");
+  dealPack();
 </script>
 
 </body>
