@@ -1,70 +1,66 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>FIFA Draft</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FIFA Draft</title>
 
-  <style>
-    body {
-      background: #0b0b0b;
-      color: white;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      margin: 0;
-    }
+<style>
+body {
+  margin: 0;
+  background: #0b0b0b;
+  color: white;
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
 
-    h1 {
-      margin: 20px 0 10px;
-    }
+h1 {
+  margin: 16px 0 8px;
+}
 
-    /* PACK */
-    .pack {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      margin-bottom: 30px;
-    }
+/* ---------- PACK ---------- */
+.pack {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding: 10px;
+  max-width: 360px;
+  margin: auto;
+}
 
-    .pack img {
-      width: 80px;
-      border-radius: 8px;
-      cursor: pointer;
-    }
+.pack img {
+  width: 100%;
+  max-width: 95px;
+  border-radius: 8px;
+  cursor: pointer;
+}
 
-    .selected {
-      opacity: 0.4;
-      outline: 2px solid yellow;
-    }
+/* ---------- TEAM ---------- */
+.team {
+  max-width: 360px;
+  margin: auto;
+  padding-bottom: 20px;
+}
 
-    /* TEAMS */
-    .team {
-      margin-bottom: 50px;
-    }
+.row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 6px 0;
+}
 
-    .row {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      margin: 8px 0;
-    }
+.slot {
+  width: 90px;
+  height: 135px;
+  border: 2px dashed #555;
+  border-radius: 8px;
+}
 
-    .slot {
-      width: 80px;
-      height: 120px;
-      border: 2px dashed #555;
-      border-radius: 8px;
-    }
-
-    .slot img {
-      width: 100%;
-      height: 100%;
-      border-radius: 8px;
-    }
-
-    .gk-row {
-      margin-top: 10px;
-    }
-  </style>
+.slot img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+</style>
 </head>
 
 <body>
@@ -79,92 +75,97 @@
 <div class="team" id="teamB"></div>
 
 <script>
-  const allCards = [
-    "fifa-cards/marcelo10.png",
-    "fifa-cards/marcelo11.png",
-    "fifa-cards/marcelo12.png",
-    "fifa-cards/marcelo13.png",
-    "fifa-cards/vieira10.png",
-    "fifa-cards/vieira11.png",
-    "fifa-cards/vieira12.png",
-    "fifa-cards/vieira14.png"
-  ];
+/* ---------- CARD LIST ---------- */
+const allCards = [
+  "fifa-cards/marcelo10.png",
+  "fifa-cards/marcelo11.png",
+  "fifa-cards/marcelo12.png",
+  "fifa-cards/marcelo13.png",
+  "fifa-cards/vieira10.png",
+  "fifa-cards/vieira11.png",
+  "fifa-cards/vieira12.png",
+  "fifa-cards/vieira14.png"
+];
 
-  let deck = [...allCards];
-  let currentPack = [];
-  let selectedCard = null;
-  let picksThisRound = 0;
+let deck = [...allCards];
+let packCards = [];
+let picksThisRound = 0;
+let currentTeam = "A";
 
-  const packDiv = document.getElementById("pack");
+/* ---------- ELEMENTS ---------- */
+const packEl = document.getElementById("pack");
+const teamA = document.getElementById("teamA");
+const teamB = document.getElementById("teamB");
 
-  function shuffle(arr) {
-    return arr.sort(() => Math.random() - 0.5);
+/* ---------- FORMATION ---------- */
+function buildTeam(teamEl) {
+  teamEl.innerHTML = "";
+
+  const rows = [3,3,4,1]; // 4-3-3 + GK
+  rows.forEach(count => {
+    const row = document.createElement("div");
+    row.className = "row";
+
+    for (let i = 0; i < count; i++) {
+      const slot = document.createElement("div");
+      slot.className = "slot";
+      slot.onclick = () => placeCard(slot);
+      row.appendChild(slot);
+    }
+
+    teamEl.appendChild(row);
+  });
+}
+
+/* ---------- PACK ---------- */
+function dealPack() {
+  packEl.innerHTML = "";
+  picksThisRound = 0;
+  currentTeam = "A";
+
+  deck = deck.sort(() => Math.random() - 0.5);
+  packCards = deck.slice(0, 5);
+
+  packCards.forEach(src => {
+    const img = document.createElement("img");
+    img.src = src;
+    img.onclick = () => selectCard(img);
+    packEl.appendChild(img);
+  });
+}
+
+let selectedCard = null;
+
+function selectCard(img) {
+  selectedCard = img.src;
+  [...packEl.children].forEach(i => i.style.opacity = 1);
+  img.style.opacity = 0.4;
+}
+
+function placeCard(slot) {
+  if (!selectedCard || slot.innerHTML !== "") return;
+
+  const img = document.createElement("img");
+  img.src = selectedCard;
+  slot.appendChild(img);
+
+  deck = deck.filter(c => c !== selectedCard);
+  packCards = packCards.filter(c => c !== selectedCard);
+
+  selectedCard = null;
+  picksThisRound++;
+
+  currentTeam = currentTeam === "A" ? "B" : "A";
+
+  if (picksThisRound === 2) {
+    dealPack();
   }
+}
 
-  function dealPack() {
-    packDiv.innerHTML = "";
-    picksThisRound = 0;
-    selectedCard = null;
-
-    shuffle(deck);
-    currentPack = deck.slice(0, 5);
-
-    currentPack.forEach(src => {
-      const img = document.createElement("img");
-      img.src = src;
-      img.onclick = () => selectCard(img, src);
-      packDiv.appendChild(img);
-    });
-  }
-
-  function selectCard(img, src) {
-    document.querySelectorAll(".pack img").forEach(i => i.classList.remove("selected"));
-    img.classList.add("selected");
-    selectedCard = src;
-  }
-
-  function createTeam(containerId) {
-    const container = document.getElementById(containerId);
-
-    const layout = [3, 3, 4, 1]; // 4-3-3 + GK
-
-    layout.forEach((count, rowIndex) => {
-      const row = document.createElement("div");
-      row.className = "row";
-      if (count === 1) row.classList.add("gk-row");
-
-      for (let i = 0; i < count; i++) {
-        const slot = document.createElement("div");
-        slot.className = "slot";
-
-        slot.onclick = () => {
-          if (!selectedCard || slot.innerHTML !== "") return;
-
-          const img = document.createElement("img");
-          img.src = selectedCard;
-          slot.appendChild(img);
-
-          deck = deck.filter(c => c !== selectedCard);
-          selectedCard = null;
-          picksThisRound++;
-
-          document.querySelectorAll(".pack img").forEach(i => i.classList.remove("selected"));
-
-          if (picksThisRound === 2) {
-            dealPack();
-          }
-        };
-
-        row.appendChild(slot);
-      }
-
-      container.appendChild(row);
-    });
-  }
-
-  createTeam("teamA");
-  createTeam("teamB");
-  dealPack();
+/* ---------- INIT ---------- */
+buildTeam(teamA);
+buildTeam(teamB);
+dealPack();
 </script>
 
 </body>
