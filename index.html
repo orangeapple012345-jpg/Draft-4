@@ -11,65 +11,66 @@
       font-family: Arial, sans-serif;
       text-align: center;
       margin: 0;
-      padding: 10px;
+      padding: 0;
     }
 
     h2 {
-      margin: 10px 0;
+      margin-top: 20px;
     }
 
+    /* PACK */
     .pack {
       display: flex;
       justify-content: center;
       gap: 10px;
-      margin-bottom: 20px;
+      margin: 20px;
+      flex-wrap: wrap;
     }
 
     .pack img {
       width: 75px;
-      border-radius: 6px;
+      border-radius: 8px;
       cursor: pointer;
     }
 
+    /* TEAMS */
     .teams {
       display: flex;
       flex-direction: column;
-      gap: 25px;
+      gap: 40px;
+      margin-bottom: 40px;
     }
 
     .team {
-      border-top: 1px solid #333;
-      padding-top: 10px;
-    }
-
-    .formation {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      align-items: center;
-    }
-
-    .row {
-      display: flex;
-      gap: 8px;
+      display: grid;
+      grid-template-columns: repeat(3, 80px);
+      gap: 12px;
       justify-content: center;
     }
 
+    .defence {
+      grid-template-columns: repeat(4, 80px);
+    }
+
+    .midfield {
+      grid-template-columns: repeat(3, 80px);
+    }
+
+    .attack {
+      grid-template-columns: repeat(3, 80px);
+    }
+
     .slot {
-      width: 70px;
-      height: 110px;
+      width: 80px;
+      height: 120px;
       border: 2px dashed #555;
-      border-radius: 6px;
+      border-radius: 8px;
     }
 
     .slot img {
       width: 100%;
       height: 100%;
-      border-radius: 6px;
-    }
-
-    .active {
-      outline: 2px solid #00ff99;
+      border-radius: 8px;
     }
   </style>
 </head>
@@ -81,20 +82,24 @@
 
 <div class="teams">
 
-  <div class="team">
+  <div>
     <h2>TEAM A</h2>
-    <div class="formation" id="teamA"></div>
+    <div class="team attack" id="teamA-attack"></div>
+    <div class="team midfield" id="teamA-mid"></div>
+    <div class="team defence" id="teamA-def"></div>
   </div>
 
-  <div class="team">
+  <div>
     <h2>TEAM B</h2>
-    <div class="formation" id="teamB"></div>
+    <div class="team attack" id="teamB-attack"></div>
+    <div class="team midfield" id="teamB-mid"></div>
+    <div class="team defence" id="teamB-def"></div>
   </div>
 
 </div>
 
 <script>
-  const cards = [
+  const allCards = [
     "fifa-cards/marcelo10.png",
     "fifa-cards/marcelo11.png",
     "fifa-cards/marcelo12.png",
@@ -105,72 +110,69 @@
     "fifa-cards/vieira14.png"
   ];
 
-  let deck = [...cards];
-  let selectedCard = null;
-  let picksThisRound = 0;
+  let deck = [...allCards];
+  let packPicks = 0;
+  let selected = null;
 
   const packDiv = document.getElementById("pack");
 
-  function shuffle(array) {
-    return array.sort(() => Math.random() - 0.5);
+  function shuffleDeck() {
+    deck.sort(() => Math.random() - 0.5);
   }
 
   function dealPack() {
-    picksThisRound = 0;
-    selectedCard = null;
     packDiv.innerHTML = "";
-    shuffle(deck);
+    shuffleDeck();
     deck.slice(0, 5).forEach(src => {
       const img = document.createElement("img");
       img.src = src;
-      img.onclick = () => selectCard(img, src);
+      img.onclick = () => selectCard(src, img);
       packDiv.appendChild(img);
     });
   }
 
-  function selectCard(img, src) {
+  function selectCard(src, img) {
+    selected = src;
     document.querySelectorAll(".pack img").forEach(i => i.style.opacity = 1);
     img.style.opacity = 0.4;
-    selectedCard = src;
   }
 
-  function createTeam(teamId) {
-    const team = document.getElementById(teamId);
-
-    const rows = [3, 3, 4, 1]; // 4-3-3 (top to bottom)
-    rows.forEach(count => {
-      const row = document.createElement("div");
-      row.className = "row";
-
-      for (let i = 0; i < count; i++) {
-        const slot = document.createElement("div");
-        slot.className = "slot";
-        slot.onclick = () => placeCard(slot);
-        row.appendChild(slot);
-      }
-
-      team.appendChild(row);
-    });
+  function makeSlots(containerId, count) {
+    const container = document.getElementById(containerId);
+    for (let i = 0; i < count; i++) {
+      const slot = document.createElement("div");
+      slot.className = "slot";
+      slot.onclick = () => placeCard(slot);
+      container.appendChild(slot);
+    }
   }
 
   function placeCard(slot) {
-    if (!selectedCard || slot.innerHTML !== "") return;
+    if (!selected || slot.innerHTML !== "") return;
 
     const img = document.createElement("img");
-    img.src = selectedCard;
+    img.src = selected;
     slot.appendChild(img);
 
-    deck = deck.filter(c => c !== selectedCard);
-    selectedCard = null;
-    picksThisRound++;
+    deck = deck.filter(c => c !== selected);
+    selected = null;
+    packPicks++;
 
-    if (picksThisRound === 2) {
+    if (packPicks === 2) {
+      packPicks = 0;
       dealPack();
     }
   }
 
-  createTeam("teamA");
-  createTeam("teamB");
+  // Build formations
+  makeSlots("teamA-attack", 3);
+  makeSlots("teamA-mid", 3);
+  makeSlots("teamA-def", 4);
+
+  makeSlots("teamB-attack", 3);
+  makeSlots("teamB-mid", 3);
+  makeSlots("teamB-def", 4);
+
   dealPack();
 </script>
 
