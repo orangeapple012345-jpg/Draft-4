@@ -12,16 +12,28 @@
       text-align: center;
     }
 
-    h1 {
-      margin-top: 20px;
+    .container {
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
     }
 
-    .pack, .team {
+    .pack {
       display: flex;
       justify-content: center;
-      flex-wrap: wrap;
       gap: 12px;
       margin: 20px;
+    }
+
+    .team {
+      width: 45%;
+    }
+
+    .row {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 10px 0;
     }
 
     img {
@@ -44,8 +56,25 @@
 <h1>PACK</h1>
 <div class="pack" id="pack"></div>
 
-<h1>TEAM</h1>
-<div class="team" id="team"></div>
+<div class="container">
+
+  <div class="team" id="teamA">
+    <h2>TEAM A</h2>
+    <div class="row"><div class="slot"></div><div class="slot"></div><div class="slot"></div></div>
+    <div class="row"><div class="slot"></div><div class="slot"></div><div class="slot"></div></div>
+    <div class="row"><div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div></div>
+    <div class="row"><div class="slot"></div></div>
+  </div>
+
+  <div class="team" id="teamB">
+    <h2>TEAM B</h2>
+    <div class="row"><div class="slot"></div><div class="slot"></div><div class="slot"></div></div>
+    <div class="row"><div class="slot"></div><div class="slot"></div><div class="slot"></div></div>
+    <div class="row"><div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div></div>
+    <div class="row"><div class="slot"></div></div>
+  </div>
+
+</div>
 
 <script>
   const cards = [
@@ -59,41 +88,46 @@
     "fifa-cards/vieira14.png"
   ];
 
-  let deck = cards.sort(() => Math.random() - 0.5);
+  let deck = [...cards].sort(() => Math.random() - 0.5);
   let selected = null;
+  let picksThisPack = 0;
 
-  const pack = document.getElementById("pack");
-  const team = document.getElementById("team");
+  const packDiv = document.getElementById("pack");
+  const slots = document.querySelectorAll(".slot");
 
   function dealPack() {
-    pack.innerHTML = "";
+    packDiv.innerHTML = "";
+    picksThisPack = 0;
+
     deck.slice(0, 5).forEach(src => {
       const img = document.createElement("img");
       img.src = src;
-      img.onclick = () => selectCard(src, img);
-      pack.appendChild(img);
+      img.onclick = () => {
+        selected = src;
+        document.querySelectorAll(".pack img").forEach(i => i.style.opacity = 1);
+        img.style.opacity = 0.3;
+      };
+      packDiv.appendChild(img);
     });
   }
 
-  function selectCard(src, img) {
-    selected = src;
-    img.style.opacity = 0.3;
-  }
-
-  for (let i = 0; i < 11; i++) {
-    const slot = document.createElement("div");
-    slot.className = "slot";
+  slots.forEach(slot => {
     slot.onclick = () => {
       if (!selected || slot.innerHTML !== "") return;
+
       const img = document.createElement("img");
       img.src = selected;
       slot.appendChild(img);
+
       deck = deck.filter(c => c !== selected);
       selected = null;
-      dealPack();
+      picksThisPack++;
+
+      if (picksThisPack === 2) {
+        dealPack();
+      }
     };
-    team.appendChild(slot);
-  }
+  });
 
   dealPack();
 </script>
