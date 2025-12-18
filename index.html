@@ -10,68 +10,85 @@
       color: white;
       font-family: Arial, sans-serif;
       text-align: center;
+      margin: 0;
+      padding: 10px;
     }
 
-    .container {
-      display: flex;
-      justify-content: space-around;
-      flex-wrap: wrap;
+    h2 {
+      margin: 10px 0;
     }
 
     .pack {
       display: flex;
       justify-content: center;
-      gap: 12px;
-      margin: 20px;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .pack img {
+      width: 75px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .teams {
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
     }
 
     .team {
-      width: 45%;
+      border-top: 1px solid #333;
+      padding-top: 10px;
+    }
+
+    .formation {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: center;
     }
 
     .row {
       display: flex;
+      gap: 8px;
       justify-content: center;
-      gap: 10px;
-      margin: 10px 0;
-    }
-
-    img {
-      width: 90px;
-      cursor: pointer;
-      border-radius: 8px;
     }
 
     .slot {
-      width: 90px;
-      height: 140px;
+      width: 70px;
+      height: 110px;
       border: 2px dashed #555;
-      border-radius: 8px;
+      border-radius: 6px;
+    }
+
+    .slot img {
+      width: 100%;
+      height: 100%;
+      border-radius: 6px;
+    }
+
+    .active {
+      outline: 2px solid #00ff99;
     }
   </style>
 </head>
 
 <body>
 
-<h1>PACK</h1>
+<h2>PACK</h2>
 <div class="pack" id="pack"></div>
 
-<div class="container">
+<div class="teams">
 
-  <div class="team" id="teamA">
+  <div class="team">
     <h2>TEAM A</h2>
-    <div class="row"><div class="slot"></div><div class="slot"></div><div class="slot"></div></div>
-    <div class="row"><div class="slot"></div><div class="slot"></div><div class="slot"></div></div>
-    <div class="row"><div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div></div>
-    <div class="row"><div class="slot"></div></div>
+    <div class="formation" id="teamA"></div>
   </div>
 
-  <div class="team" id="teamB">
+  <div class="team">
     <h2>TEAM B</h2>
-    <div class="row"><div class="slot"></div><div class="slot"></div><div class="slot"></div></div>
-    <div class="row"><div class="slot"></div><div class="slot"></div><div class="slot"></div></div>
-    <div class="row"><div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div></div>
-    <div class="row"><div class="slot"></div></div>
+    <div class="formation" id="teamB"></div>
   </div>
 
 </div>
@@ -88,47 +105,72 @@
     "fifa-cards/vieira14.png"
   ];
 
-  let deck = [...cards].sort(() => Math.random() - 0.5);
-  let selected = null;
-  let picksThisPack = 0;
+  let deck = [...cards];
+  let selectedCard = null;
+  let picksThisRound = 0;
 
   const packDiv = document.getElementById("pack");
-  const slots = document.querySelectorAll(".slot");
+
+  function shuffle(array) {
+    return array.sort(() => Math.random() - 0.5);
+  }
 
   function dealPack() {
+    picksThisRound = 0;
+    selectedCard = null;
     packDiv.innerHTML = "";
-    picksThisPack = 0;
-
+    shuffle(deck);
     deck.slice(0, 5).forEach(src => {
       const img = document.createElement("img");
       img.src = src;
-      img.onclick = () => {
-        selected = src;
-        document.querySelectorAll(".pack img").forEach(i => i.style.opacity = 1);
-        img.style.opacity = 0.3;
-      };
+      img.onclick = () => selectCard(img, src);
       packDiv.appendChild(img);
     });
   }
 
-  slots.forEach(slot => {
-    slot.onclick = () => {
-      if (!selected || slot.innerHTML !== "") return;
+  function selectCard(img, src) {
+    document.querySelectorAll(".pack img").forEach(i => i.style.opacity = 1);
+    img.style.opacity = 0.4;
+    selectedCard = src;
+  }
 
-      const img = document.createElement("img");
-      img.src = selected;
-      slot.appendChild(img);
+  function createTeam(teamId) {
+    const team = document.getElementById(teamId);
 
-      deck = deck.filter(c => c !== selected);
-      selected = null;
-      picksThisPack++;
+    const rows = [3, 3, 4, 1]; // 4-3-3 (top to bottom)
+    rows.forEach(count => {
+      const row = document.createElement("div");
+      row.className = "row";
 
-      if (picksThisPack === 2) {
-        dealPack();
+      for (let i = 0; i < count; i++) {
+        const slot = document.createElement("div");
+        slot.className = "slot";
+        slot.onclick = () => placeCard(slot);
+        row.appendChild(slot);
       }
-    };
-  });
 
+      team.appendChild(row);
+    });
+  }
+
+  function placeCard(slot) {
+    if (!selectedCard || slot.innerHTML !== "") return;
+
+    const img = document.createElement("img");
+    img.src = selectedCard;
+    slot.appendChild(img);
+
+    deck = deck.filter(c => c !== selectedCard);
+    selectedCard = null;
+    picksThisRound++;
+
+    if (picksThisRound === 2) {
+      dealPack();
+    }
+  }
+
+  createTeam("teamA");
+  createTeam("teamB");
   dealPack();
 </script>
 
