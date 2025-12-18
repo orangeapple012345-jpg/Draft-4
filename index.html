@@ -84,7 +84,15 @@ const allCards = [
   "fifa-cards/vieira10.png",
   "fifa-cards/vieira11.png",
   "fifa-cards/vieira12.png",
-  "fifa-cards/vieira14.png"
+  "fifa-cards/vieira14.png",
+  "fifa-cards/busquets10.png",
+  "fifa-cards/busquets11.png",
+  "fifa-cards/busquets12.png",
+  "fifa-cards/busquets13.png",
+  "fifa-cards/lahm10.png",
+  "fifa-cards/lahm11.png",
+  "fifa-cards/lahm12.png",
+  "fifa-cards/lahm13.png",
 ];
 
 let deck = [...allCards];
@@ -123,7 +131,8 @@ function dealPack() {
   picksThisRound = 0;
   currentTeam = "A";
 
-  deck = deck.sort(() => Math.random() - 0.5);
+  deck =
+  deck.sort(() => Math.random() - 0.5);
   packCards = deck.slice(0, 5);
 
   packCards.forEach(src => {
