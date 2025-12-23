@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FIFA Draft & Match Simulation</title>
+<title>FIFA Draft & Match</title>
 
 <style>
 body {
@@ -60,20 +60,18 @@ h1, h2 {
 }
 
 button {
-  margin: 16px;
+  margin: 14px;
   padding: 12px 20px;
   font-size: 16px;
   background: #1db954;
   border: none;
   border-radius: 6px;
-  color: black;
   cursor: pointer;
 }
 
 #result {
-  font-size: 16px;
   margin-bottom: 20px;
-  white-space: pre-line;
+  font-size: 18px;
 }
 </style>
 </head>
@@ -93,49 +91,46 @@ button {
 <div id="result"></div>
 
 <script>
-/* ======================================================
-   CARD DATABASE (YOU EDIT THIS)
-====================================================== */
+/* ================= PLAYER DATABASE ================= */
 
-const ALL_CARDS = [
-  { img:"fifa-cards/messi20.png", name:"Messi", position:"ATT", rating:95 },
-  { img:"fifa-cards/ronaldo20.png", name:"Ronaldo", position:"ATT", rating:94 },
-  { img:"fifa-cards/neymar15.png", name:"Neymar", position:"ATT", rating:93 },
+const players = [
+  // --- PUYOL ---
+  { name: "Puyol", rating: 95, position: "DEF", img: "fifa-cards/puyol10.png" },
+  { name: "Puyol", rating: 94, position: "DEF", img: "fifa-cards/puyol11.png" },
+  { name: "Puyol", rating: 92, position: "DEF", img: "fifa-cards/puyol12.png" },
+  { name: "Puyol", rating: 92, position: "DEF", img: "fifa-cards/puyol13.png" },
 
-  { img:"fifa-cards/xavi12.png", name:"Xavi", position:"MID", rating:91 },
-  { img:"fifa-cards/iniesta12.png", name:"Iniesta", position:"MID", rating:92 },
-  { img:"fifa-cards/modric13.png", name:"Modric", position:"MID", rating:91 },
+  // --- SCHMEICHEL ---
+  { name: "Schmeichel", rating: 96, position: "GK", img: "fifa-cards/schmeichel10.png" },
+  { name: "Schmeichel", rating: 95, position: "GK", img: "fifa-cards/schmeichel11.png" },
+  { name: "Schmeichel", rating: 92, position: "GK", img: "fifa-cards/schmeichel12.png" },
+  { name: "Schmeichel", rating: 86, position: "GK", img: "fifa-cards/schmeichel13.png" },
 
-  { img:"fifa-cards/maldini13.png", name:"Maldini", position:"DEF", rating:94 },
-  { img:"fifa-cards/cannavaro12.png", name:"Cannavaro", position:"DEF", rating:92 },
-  { img:"fifa-cards/ramos14.png", name:"Ramos", position:"DEF", rating:91 },
-
-  { img:"fifa-cards/neuer14.png", name:"Neuer", position:"GK", rating:92 },
-  { img:"fifa-cards/buffon13.png", name:"Buffon", position:"GK", rating:91 }
+  // --- THURAM ---
+  { name: "Thuram", rating: 95, position: "DEF", img: "fifa-cards/thuram10.png" },
+  { name: "Thuram", rating: 95, position: "DEF", img: "fifa-cards/thuram11.png" },
+  { name: "Thuram", rating: 93, position: "DEF", img: "fifa-cards/thuram12.png" },
+  { name: "Thuram", rating: 92, position: "DEF", img: "fifa-cards/thuram13.png" },
 ];
 
-/* ======================================================
-   STATE
-====================================================== */
+/* ================= DRAFT STATE ================= */
 
-let deck = [...ALL_CARDS];
+let deck = [...players];
 let packCards = [];
-let selectedCard = null;
+let selectedPlayer = null;
 let picksThisRound = 0;
 
-const teamA = [];
-const teamB = [];
+const teamAPlayers = [];
+const teamBPlayers = [];
 
 const packEl = document.getElementById("pack");
 const teamAEl = document.getElementById("teamA");
 const teamBEl = document.getElementById("teamB");
 const resultEl = document.getElementById("result");
 
-/* ======================================================
-   FORMATION
-====================================================== */
+/* ================= FORMATION ================= */
 
-function buildTeam(el, teamArr) {
+function buildTeam(el, team) {
   el.innerHTML = "";
   [3,3,4,1].forEach(count => {
     const row = document.createElement("div");
@@ -144,7 +139,7 @@ function buildTeam(el, teamArr) {
     for (let i = 0; i < count; i++) {
       const slot = document.createElement("div");
       slot.className = "slot";
-      slot.onclick = () => placeCard(slot, teamArr);
+      slot.onclick = () => placeCard(slot, team);
       row.appendChild(slot);
     }
 
@@ -152,113 +147,78 @@ function buildTeam(el, teamArr) {
   });
 }
 
-/* ======================================================
-   PACK LOGIC
-====================================================== */
+/* ================= PACK ================= */
 
 function dealPack() {
   packEl.innerHTML = "";
   picksThisRound = 0;
-  selectedCard = null;
 
   deck.sort(() => Math.random() - 0.5);
   packCards = deck.slice(0, 6);
 
-  packCards.forEach(card => {
+  packCards.forEach(player => {
     const img = document.createElement("img");
-    img.src = card.img;
-    img.onclick = () => selectCard(card, img);
+    img.src = player.img;
+    img.onclick = () => selectCard(player, img);
     packEl.appendChild(img);
   });
 }
 
-function selectCard(card, img) {
-  selectedCard = card;
+function selectCard(player, img) {
+  selectedPlayer = player;
   [...packEl.children].forEach(i => i.style.opacity = 1);
   img.style.opacity = 0.4;
 }
 
-function placeCard(slot, teamArr) {
-  if (!selectedCard || slot.innerHTML) return;
+function placeCard(slot, team) {
+  if (!selectedPlayer || slot.innerHTML) return;
 
   const img = document.createElement("img");
-  img.src = selectedCard.img;
+  img.src = selectedPlayer.img;
   slot.appendChild(img);
 
-  teamArr.push(selectedCard);
-  deck = deck.filter(c => c !== selectedCard);
-  selectedCard = null;
+  (team === "A" ? teamAPlayers : teamBPlayers).push(selectedPlayer);
+  deck = deck.filter(p => p !== selectedPlayer);
+
+  selectedPlayer = null;
   picksThisRound++;
 
   if (picksThisRound === 2) dealPack();
 }
 
-/* ======================================================
-   MATCH SIMULATION
-====================================================== */
+/* ================= MATCH SIM ================= */
+
+function teamStrength(team, pos) {
+  return team
+    .filter(p => p.position === pos)
+    .reduce((s, p) => s + p.rating, 0);
+}
 
 function playMatch() {
-  if (teamA.length < 11 || teamB.length < 11) {
+  if (teamAPlayers.length < 11 || teamBPlayers.length < 11) {
     alert("Both teams must have 11 players");
     return;
   }
 
-  const simA = simulateTeam(teamA);
-  const simB = simulateTeam(teamB);
+  const attackA = teamStrength(teamAPlayers, "ATT") + Math.random()*20;
+  const attackB = teamStrength(teamBPlayers, "ATT") + Math.random()*20;
 
-  let log = "";
+  const defenseA = teamStrength(teamAPlayers, "DEF") + teamStrength(teamAPlayers, "GK");
+  const defenseB = teamStrength(teamBPlayers, "DEF") + teamStrength(teamBPlayers, "GK");
 
-  const goalsA = Math.max(0, Math.round(simA.attack - simB.defence + rand(0,2)));
-  const goalsB = Math.max(0, Math.round(simB.attack - simA.defence + rand(0,2)));
+  const goalsA = Math.max(0, Math.round((attackA - defenseB) / 60 + Math.random()*2));
+  const goalsB = Math.max(0, Math.round((attackB - defenseA) / 60 + Math.random()*2));
 
-  log += goalLog("Team A", simA.attackers, goalsA);
-  log += goalLog("Team B", simB.attackers, goalsB);
-
-  log += `\nFINAL SCORE\nTeam A ${goalsA} - ${goalsB} Team B\n`;
-
-  if (goalsA > goalsB) log += "TEAM A WINS 🏆";
-  else if (goalsB > goalsA) log += "TEAM B WINS 🏆";
-  else log += "DRAW 🤝";
-
-  resultEl.textContent = log;
+  resultEl.innerHTML = `
+    FINAL SCORE<br>
+    <strong>Team A ${goalsA} – ${goalsB} Team B</strong>
+  `;
 }
 
-function simulateTeam(team) {
-  const attackers = team.filter(p => p.position === "ATT");
-  const mids = team.filter(p => p.position === "MID");
-  const defs = team.filter(p => p.position === "DEF");
-  const gk = team.find(p => p.position === "GK");
+/* ================= INIT ================= */
 
-  return {
-    attackers,
-    attack: avg(attackers)*1.2 + avg(mids)*0.6,
-    defence: avg(defs)*1.1 + (gk ? gk.rating : 70)
-  };
-}
-
-function goalLog(teamName, attackers, goals) {
-  let log = "";
-  for (let i = 0; i < goals; i++) {
-    const scorer = attackers[Math.floor(Math.random()*attackers.length)];
-    const minute = rand(1,90);
-    log += `${minute}' ⚽ ${teamName}: ${scorer.name}\n`;
-  }
-  return log;
-}
-
-/* ======================================================
-   HELPERS
-====================================================== */
-
-const avg = arr => arr.length ? arr.reduce((s,p)=>s+p.rating,0)/arr.length : 50;
-const rand = (a,b) => Math.floor(Math.random()*(b-a+1))+a;
-
-/* ======================================================
-   INIT
-====================================================== */
-
-buildTeam(teamAEl, teamA);
-buildTeam(teamBEl, teamB);
+buildTeam(teamAEl, "A");
+buildTeam(teamBEl, "B");
 dealPack();
 </script>
 
