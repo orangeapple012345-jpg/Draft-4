@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FIFA Draft</title>
+<title>FIFA Draft & Match</title>
 
 <style>
 body {
@@ -13,8 +13,8 @@ body {
   text-align: center;
 }
 
-h1 {
-  margin: 16px 0 8px;
+h1, h2 {
+  margin: 12px 0 6px;
 }
 
 /* ---------- PACK ---------- */
@@ -29,7 +29,7 @@ h1 {
 
 .pack img {
   width: 100%;
-  max-width: 95px;
+  max-width: 90px;
   border-radius: 8px;
   cursor: pointer;
 }
@@ -38,33 +38,52 @@ h1 {
 .team {
   max-width: 360px;
   margin: auto;
-  padding-bottom: 20px;
+  padding-bottom: 16px;
 }
 
 .row {
   display: flex;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   margin: 6px 0;
 }
 
 .slot {
   width: 90px;
-  height: 135px;
   border: 2px dashed #555;
   border-radius: 8px;
+  padding: 4px;
 }
 
 .slot img {
   width: 100%;
-  height: 100%;
+  height: 120px;
   object-fit: cover;
+  border-radius: 6px;
 }
 
+/* ---------- ATTRIBUTES ---------- */
+.attrs {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  margin-top: 4px;
+}
+
+.attrs input {
+  width: 28px;
+  background: #222;
+  color: white;
+  border: 1px solid #555;
+  border-radius: 4px;
+  text-align: center;
+}
+
+/* ---------- BUTTON ---------- */
 button {
-  padding: 14px 22px;
+  margin: 14px;
+  padding: 12px 20px;
   font-size: 16px;
-  margin: 16px;
   background: #1db954;
   border: none;
   border-radius: 6px;
@@ -73,7 +92,7 @@ button {
 
 #result {
   font-size: 18px;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
 }
 </style>
 </head>
@@ -83,10 +102,10 @@ button {
 <h1>PACK</h1>
 <div class="pack" id="pack"></div>
 
-<h1>TEAM A</h1>
+<h2>TEAM A</h2>
 <div class="team" id="teamA"></div>
 
-<h1>TEAM B</h1>
+<h2>TEAM B</h2>
 <div class="team" id="teamB"></div>
 
 <button onclick="playMatch()">PLAY MATCH</button>
@@ -95,7 +114,7 @@ button {
 <script>
 /* ---------- CARD LIST ---------- */
 const allCards = [
-  "fifa-cards/marcelo10.png",
+   "fifa-cards/marcelo10.png",
   "fifa-cards/marcelo11.png",
   "fifa-cards/marcelo12.png",
   "fifa-cards/marcelo13.png",
@@ -315,17 +334,12 @@ const allCards = [
   "fifa-cards/puyol11.png",
   "fifa-cards/puyol12.png",
   "fifa-cards/puyol13.png"
-  // keep adding your cards here
+  // keep adding your images
 ];
 
 let deck = [...allCards];
-let packCards = [];
-let picksThisRound = 0;
 let selectedCard = null;
-
-/* ---------- TEAM DATA ---------- */
-const teamAStats = [];
-const teamBStats = [];
+let picksThisRound = 0;
 
 /* ---------- ELEMENTS ---------- */
 const packEl = document.getElementById("pack");
@@ -334,29 +348,29 @@ const teamBEl = document.getElementById("teamB");
 const resultEl = document.getElementById("result");
 
 /* ---------- FORMATION ---------- */
-function buildTeam(teamEl, teamStats) {
-  teamEl.innerHTML = "";
-  const rows = [3,3,4,1]; // 4-3-3 + GK
-
-  rows.forEach(() => {
+function buildTeam(el) {
+  el.innerHTML = "";
+  [3,3,4,1].forEach(count => {
     const row = document.createElement("div");
     row.className = "row";
 
-    for (let i = 0; i < arguments[1] ?? 1; i++) {}
+    for (let i = 0; i < count; i++) {
+      const slot = document.createElement("div");
+      slot.className = "slot";
+      slot.onclick = () => placeCard(slot);
 
-    rows.forEach(count => {
-      const r = document.createElement("div");
-      r.className = "row";
+      const attrs = document.createElement("div");
+      attrs.className = "attrs";
+      attrs.innerHTML = `
+        <input placeholder="A">
+        <input placeholder="M">
+        <input placeholder="D">
+      `;
 
-      for (let i = 0; i < count; i++) {
-        const slot = document.createElement("div");
-        slot.className = "slot";
-        slot.onclick = () => placeCard(slot, teamStats);
-        r.appendChild(slot);
-      }
-
-      teamEl.appendChild(r);
-    });
+      slot.appendChild(attrs);
+      row.appendChild(slot);
+    }
+    el.appendChild(row);
   });
 }
 
@@ -366,9 +380,7 @@ function dealPack() {
   picksThisRound = 0;
 
   deck.sort(() => Math.random() - 0.5);
-  packCards = deck.slice(0, 6);
-
-  packCards.forEach(src => {
+  deck.slice(0,6).forEach(src => {
     const img = document.createElement("img");
     img.src = src;
     img.onclick = () => selectCard(img);
@@ -382,20 +394,12 @@ function selectCard(img) {
   img.style.opacity = 0.4;
 }
 
-/* ---------- PLACE CARD + ATTRIBUTES ---------- */
-function placeCard(slot, teamStats) {
-  if (!selectedCard || slot.innerHTML !== "") return;
-
-  const attack = parseInt(prompt("Attack rating (0–100):", "80"));
-  const midfield = parseInt(prompt("Midfield rating (0–100):", "80"));
-  const defence = parseInt(prompt("Defence rating (0–100):", "80"));
-  const gk = parseInt(prompt("GK rating (0–100):", "0"));
-
-  teamStats.push({ attack, midfield, defence, gk });
+function placeCard(slot) {
+  if (!selectedCard || slot.querySelector("img")) return;
 
   const img = document.createElement("img");
   img.src = selectedCard;
-  slot.appendChild(img);
+  slot.insertBefore(img, slot.firstChild);
 
   deck = deck.filter(c => c !== selectedCard);
   selectedCard = null;
@@ -405,45 +409,43 @@ function placeCard(slot, teamStats) {
 }
 
 /* ---------- MATCH SIM ---------- */
-function sumStat(team, stat) {
-  return team.reduce((s, p) => s + (p[stat] || 0), 0);
+function getTeamStats(teamEl) {
+  let att = 0, mid = 0, def = 0;
+
+  teamEl.querySelectorAll(".slot").forEach(slot => {
+    const inputs = slot.querySelectorAll("input");
+    if (inputs.length === 3) {
+      att += parseInt(inputs[0].value || 0);
+      mid += parseInt(inputs[1].value || 0);
+      def += parseInt(inputs[2].value || 0);
+    }
+  });
+
+  return { att, mid, def };
 }
 
 function playMatch() {
-  if (teamAStats.length < 11 || teamBStats.length < 11) {
-    alert("Both teams need 11 players");
-    return;
-  }
+  const A = getTeamStats(teamAEl);
+  const B = getTeamStats(teamBEl);
 
-  const atkA = sumStat(teamAStats, "attack");
-  const midA = sumStat(teamAStats, "midfield");
-  const defA = sumStat(teamAStats, "defence") + sumStat(teamAStats, "gk");
+  const controlA = A.mid + Math.random()*10;
+  const controlB = B.mid + Math.random()*10;
 
-  const atkB = sumStat(teamBStats, "attack");
-  const midB = sumStat(teamBStats, "midfield");
-  const defB = sumStat(teamBStats, "defence") + sumStat(teamBStats, "gk");
+  const chancesA = (A.att - B.def)/10 + controlA/20 + Math.random()*2;
+  const chancesB = (B.att - A.def)/10 + controlB/20 + Math.random()*2;
 
-  const chancesA = (atkA * 0.5 + midA * 0.5) / 100;
-  const chancesB = (atkB * 0.5 + midB * 0.5) / 100;
-
-  let goalsA = Math.max(0, Math.round(chancesA - defB / 200 + Math.random() * 3));
-  let goalsB = Math.max(0, Math.round(chancesB - defA / 200 + Math.random() * 3));
-
-  let result =
-    goalsA > goalsB ? "TEAM A WINS 🏆" :
-    goalsB > goalsA ? "TEAM B WINS 🏆" :
-    "DRAW 🤝";
+  const goalsA = Math.max(0, Math.round(chancesA));
+  const goalsB = Math.max(0, Math.round(chancesB));
 
   resultEl.innerHTML = `
-    FINAL SCORE<br><br>
-    <strong>Team A ${goalsA} – ${goalsB} Team B</strong><br><br>
-    ${result}
+    FINAL SCORE<br>
+    <strong>Team A ${goalsA} – ${goalsB} Team B</strong>
   `;
 }
 
 /* ---------- INIT ---------- */
-buildTeam(teamAEl, teamAStats);
-buildTeam(teamBEl, teamBStats);
+buildTeam(teamAEl);
+buildTeam(teamBEl);
 dealPack();
 </script>
 
