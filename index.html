@@ -6,86 +6,78 @@
 
 <style>
 body {
-  background:#0b0b0b;
-  color:white;
-  font-family:Arial;
-  text-align:center;
+  margin: 0;
+  background: #0b0b0b;
+  color: white;
+  font-family: Arial, sans-serif;
+  text-align: center;
 }
 
+h1 {
+  margin: 16px 0 8px;
+}
+
+/* ---------- PACK ---------- */
 .pack {
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:10px;
-  max-width:360px;
-  margin:auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding: 10px;
+  max-width: 360px;
+  margin: auto;
 }
 
 .pack img {
-  width:100%;
-  max-width:95px;
-  border-radius:8px;
-  cursor:pointer;
+  width: 100%;
+  max-width: 95px;
+  border-radius: 8px;
+  cursor: pointer;
 }
 
+/* ---------- TEAM ---------- */
 .team {
-  max-width:360px;
-  margin:auto;
+  max-width: 360px;
+  margin: auto;
+  padding-bottom: 20px;
 }
 
 .row {
-  display:flex;
-  justify-content:center;
-  gap:8px;
-  margin:6px 0;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 6px 0;
 }
 
 .slot {
-  width:90px;
-  height:auto;
-  border:2px dashed #555;
-  border-radius:8px;
-  padding:4px;
+  width: 90px;
+  height: 135px;
+  border: 2px dashed #555;
+  border-radius: 8px;
 }
 
 .slot img {
-  width:100%;
-}
-
-.stats {
-  display:flex;
-  gap:4px;
-  margin-top:4px;
-}
-
-.stats input {
-  width:28px;
-  font-size:10px;
-}
-button {
-  margin:20px;
-  padding:12px 18px;
-  font-size:16px;
-  cursor:pointer;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 </style>
 </head>
 
 <body>
 
-<h2>PACK</h2>
+<h1>PACK</h1>
 <div class="pack" id="pack"></div>
 
-<h2>TEAM A</h2>
+<h1>TEAM A</h1>
 <div class="team" id="teamA"></div>
 
-<h2>TEAM B</h2>
+<h1>TEAM B</h1>
 <div class="team" id="teamB"></div>
 
-<button onclick="startMatch()">START MATCH</button>
-
 <script>
-const cards = [
-    "fifa-cards/marcelo10.png",
+/* ---------- CARD LIST ---------- */
+const allCards = [
+  "fifa-cards/marcelo10.png",
   "fifa-cards/marcelo11.png",
   "fifa-cards/marcelo12.png",
   "fifa-cards/marcelo13.png",
@@ -305,96 +297,89 @@ const cards = [
   "fifa-cards/puyol11.png",
   "fifa-cards/puyol12.png",
   "fifa-cards/puyol13.png"
+  
 ];
 
-let deck=[...cards];
-let selected=null;
-let picks=0;
+let deck = [...allCards];
+let packCards = [];
+let picksThisRound = 0;
+let currentTeam = "A";
 
-const teamAData=[];
-const teamBData=[];
+/* ---------- ELEMENTS ---------- */
+const packEl = document.getElementById("pack");
+const teamA = document.getElementById("teamA");
+const teamB = document.getElementById("teamB");
 
-const pack=document.getElementById("pack");
-const teamA=document.getElementById("teamA");
-const teamB=document.getElementById("teamB");
+/* ---------- FORMATION ---------- */
+function buildTeam(teamEl) {
+  teamEl.innerHTML = "";
 
-function buildTeam(el,team){
-  el.innerHTML="";
-  [3,3,4,1].forEach(r=>{
-    const row=document.createElement("div");
-    row.className="row";
-    for(let i=0;i<r;i++){
-      const slot=document.createElement("div");
-      slot.className="slot";
-      slot.onclick=()=>place(slot,team);
+  const rows = [3,3,4,1]; // 4-3-3 + GK
+  rows.forEach(count => {
+    const row = document.createElement("div");
+    row.className = "row";
+
+    for (let i = 0; i < count; i++) {
+      const slot = document.createElement("div");
+      slot.className = "slot";
+      slot.onclick = () => placeCard(slot);
       row.appendChild(slot);
     }
-    el.appendChild(row);
+
+    teamEl.appendChild(row);
   });
 }
 
-function deal(){
-  pack.innerHTML="";
-  deck.sort(()=>Math.random()-0.5);
-  deck.slice(0,6).forEach(src=>{
-    const img=document.createElement("img");
-    img.src=src;
-    img.onclick=()=>select(img);
-    pack.appendChild(img);
+/* ---------- PACK ---------- */
+function dealPack() {
+  packEl.innerHTML = "";
+  picksThisRound = 0;
+  currentTeam = "A";
+
+  deck =
+  deck.sort(() => Math.random() - 0.5);
+  packCards = deck.slice(0, 6);
+
+  packCards.forEach(src => {
+    const img = document.createElement("img");
+    img.src = src;
+    img.onclick = () => selectCard(img);
+    packEl.appendChild(img);
   });
 }
 
-function select(img){
-  selected=img.src;
-  [...pack.children].forEach(i=>i.style.opacity=1);
-  img.style.opacity=0.4;
+let selectedCard = null;
+
+function selectCard(img) {
+  selectedCard = img.src;
+  [...packEl.children].forEach(i => i.style.opacity = 1);
+  img.style.opacity = 0.4;
 }
 
-function place(slot,team){
-  if(!selected||slot.innerHTML)return;
-  const img=document.createElement("img");
-  img.src=selected;
+function placeCard(slot) {
+  if (!selectedCard || slot.innerHTML !== "") return;
 
-  const stats=document.createElement("div");
-  stats.className="stats";
-  stats.innerHTML=`
-    <input placeholder="ATT">
-    <input placeholder="MID">
-    <input placeholder="DEF">
-  `;
-
+  const img = document.createElement("img");
+  img.src = selectedCard;
   slot.appendChild(img);
-  slot.appendChild(stats);
 
-  const data={img:selected,att:0,mid:0,def:0,stats};
-  (team==="A"?teamAData:teamBData).push(data);
+  deck = deck.filter(c => c !== selectedCard);
+  packCards = packCards.filter(c => c !== selectedCard);
 
-  deck=deck.filter(c=>c!==selected);
-  selected=null;
-  picks++;
-  if(picks%2===0)deal();
+  selectedCard = null;
+  picksThisRound++;
+
+  currentTeam = currentTeam === "A" ? "B" : "A";
+
+  if (picksThisRound === 2) {
+    dealPack();
+  }
 }
 
-function startMatch(){
-  teamAData.forEach(p=>{
-    p.att=+p.stats.children[0].value||50;
-    p.mid=+p.stats.children[1].value||50;
-    p.def=+p.stats.children[2].value||50;
-  });
-  teamBData.forEach(p=>{
-    p.att=+p.stats.children[0].value||50;
-    p.mid=+p.stats.children[1].value||50;
-    p.def=+p.stats.children[2].value||50;
-  });
-
-  localStorage.setItem("teamA",JSON.stringify(teamAData));
-  localStorage.setItem("teamB",JSON.stringify(teamBData));
-  location.href="match.html";
-}
-
-buildTeam(teamA,"A");
-buildTeam(teamB,"B");
-deal();
+/* ---------- INIT ---------- */
+buildTeam(teamA);
+buildTeam(teamB);
+dealPack();
 </script>
 
 </body>
