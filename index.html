@@ -2,104 +2,77 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FIFA Draft & Match</title>
+<title>FIFA Draft</title>
 
 <style>
 body {
-  margin: 0;
-  background: #0b0b0b;
-  color: white;
-  font-family: Arial, sans-serif;
-  text-align: center;
+  background:#0b0b0b;
+  color:white;
+  font-family:Arial;
+  text-align:center;
 }
 
-h1, h2 {
-  margin: 12px 0 6px;
-}
-
-/* ---------- PACK ---------- */
 .pack {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  padding: 10px;
-  max-width: 360px;
-  margin: auto;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+  max-width:360px;
+  margin:auto;
 }
 
 .pack img {
-  width: 100%;
-  max-width: 90px;
-  border-radius: 8px;
-  cursor: pointer;
+  width:100%;
+  max-width:95px;
+  border-radius:8px;
+  cursor:pointer;
 }
 
-/* ---------- TEAM ---------- */
 .team {
-  max-width: 360px;
-  margin: auto;
-  padding-bottom: 16px;
+  max-width:360px;
+  margin:auto;
 }
 
 .row {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  margin: 4px 0;
+  display:flex;
+  justify-content:center;
+  gap:8px;
+  margin:6px 0;
 }
 
 .slot {
-  width: 90px;
-  border: 2px dashed #555;
-  border-radius: 8px;
-  padding: 4px;
+  width:90px;
+  height:auto;
+  border:2px dashed #555;
+  border-radius:8px;
+  padding:4px;
 }
 
 .slot img {
-  width: 100%;
-  height: 120px;
-  object-fit: cover;
-  border-radius: 6px;
+  width:100%;
 }
 
-/* ---------- ATTRIBUTES ---------- */
-.attrs {
-  display: flex;
-  justify-content: space-between;
-  font-size: 10px;
-  margin-top: 4px;
+.stats {
+  display:flex;
+  gap:4px;
+  margin-top:4px;
 }
 
-.attrs input {
-  width: 28px;
-  background: #222;
-  color: white;
-  border: 1px solid #555;
-  border-radius: 4px;
-  text-align: center;
+.stats input {
+  width:28px;
+  font-size:10px;
 }
-
-/* ---------- BUTTON ---------- */
 button {
-  margin: 14px;
-  padding: 12px 20px;
-  font-size: 16px;
-  background: #1db954;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-#result {
-  font-size: 18px;
-  margin-bottom: 20px;
+  margin:20px;
+  padding:12px 18px;
+  font-size:16px;
+  cursor:pointer;
 }
 </style>
 </head>
 
 <body>
 
-<h1>PACK</h1>
+<h2>PACK</h2>
 <div class="pack" id="pack"></div>
 
 <h2>TEAM A</h2>
@@ -108,13 +81,11 @@ button {
 <h2>TEAM B</h2>
 <div class="team" id="teamB"></div>
 
-<button onclick="playMatch()">PLAY MATCH</button>
-<div id="result"></div>
+<button onclick="startMatch()">START MATCH</button>
 
 <script>
-/* ---------- CARD LIST ---------- */
-const allCards = [
-   "fifa-cards/marcelo10.png",
+const cards = [
+    "fifa-cards/marcelo10.png",
   "fifa-cards/marcelo11.png",
   "fifa-cards/marcelo12.png",
   "fifa-cards/marcelo13.png",
@@ -334,119 +305,96 @@ const allCards = [
   "fifa-cards/puyol11.png",
   "fifa-cards/puyol12.png",
   "fifa-cards/puyol13.png"
-  // keep adding your images
 ];
 
-let deck = [...allCards];
-let selectedCard = null;
-let picksThisRound = 0;
+let deck=[...cards];
+let selected=null;
+let picks=0;
 
-/* ---------- ELEMENTS ---------- */
-const packEl = document.getElementById("pack");
-const teamAEl = document.getElementById("teamA");
-const teamBEl = document.getElementById("teamB");
-const resultEl = document.getElementById("result");
+const teamAData=[];
+const teamBData=[];
 
-/* ---------- FORMATION ---------- */
-function buildTeam(el) {
-  el.innerHTML = "";
-  [3,3,4,1].forEach(count => {
-    const row = document.createElement("div");
-    row.className = "row";
+const pack=document.getElementById("pack");
+const teamA=document.getElementById("teamA");
+const teamB=document.getElementById("teamB");
 
-    for (let i = 0; i < count; i++) {
-      const slot = document.createElement("div");
-      slot.className = "slot";
-      slot.onclick = () => placeCard(slot);
-
-      const attrs = document.createElement("div");
-      attrs.className = "attrs";
-      attrs.innerHTML = `
-        <input placeholder="A">
-        <input placeholder="M">
-        <input placeholder="D">
-      `;
-
-      slot.appendChild(attrs);
+function buildTeam(el,team){
+  el.innerHTML="";
+  [3,3,4,1].forEach(r=>{
+    const row=document.createElement("div");
+    row.className="row";
+    for(let i=0;i<r;i++){
+      const slot=document.createElement("div");
+      slot.className="slot";
+      slot.onclick=()=>place(slot,team);
       row.appendChild(slot);
     }
     el.appendChild(row);
   });
 }
 
-/* ---------- PACK ---------- */
-function dealPack() {
-  packEl.innerHTML = "";
-  picksThisRound = 0;
-
-  deck.sort(() => Math.random() - 0.5);
-  deck.slice(0,6).forEach(src => {
-    const img = document.createElement("img");
-    img.src = src;
-    img.onclick = () => selectCard(img);
-    packEl.appendChild(img);
+function deal(){
+  pack.innerHTML="";
+  deck.sort(()=>Math.random()-0.5);
+  deck.slice(0,6).forEach(src=>{
+    const img=document.createElement("img");
+    img.src=src;
+    img.onclick=()=>select(img);
+    pack.appendChild(img);
   });
 }
 
-function selectCard(img) {
-  selectedCard = img.src;
-  [...packEl.children].forEach(i => i.style.opacity = 1);
-  img.style.opacity = 0.4;
+function select(img){
+  selected=img.src;
+  [...pack.children].forEach(i=>i.style.opacity=1);
+  img.style.opacity=0.4;
 }
 
-function placeCard(slot) {
-  if (!selectedCard || slot.querySelector("img")) return;
+function place(slot,team){
+  if(!selected||slot.innerHTML)return;
+  const img=document.createElement("img");
+  img.src=selected;
 
-  const img = document.createElement("img");
-  img.src = selectedCard;
-  slot.insertBefore(img, slot.firstChild);
-
-  deck = deck.filter(c => c !== selectedCard);
-  selectedCard = null;
-  picksThisRound++;
-
-  if (picksThisRound === 2) dealPack();
-}
-
-/* ---------- MATCH SIM ---------- */
-function getTeamStats(teamEl) {
-  let att = 0, mid = 0, def = 0;
-
-  teamEl.querySelectorAll(".slot").forEach(slot => {
-    const inputs = slot.querySelectorAll("input");
-    if (inputs.length === 3) {
-      att += parseInt(inputs[0].value || 0);
-      mid += parseInt(inputs[1].value || 0);
-      def += parseInt(inputs[2].value || 0);
-    }
-  });
-
-  return { att, mid, def };
-}
-
-function playMatch() {
-  const A = getTeamStats(teamAEl);
-  const B = getTeamStats(teamBEl);
-
-  const controlA = A.mid + Math.random()*10;
-  const controlB = B.mid + Math.random()*10;
-
-  const chancesA = (A.att - B.def)/10 + controlA/20 + Math.random()*2;
-  const chancesB = (B.att - A.def)/10 + controlB/20 + Math.random()*2;
-
-  const goalsA = Math.max(0, Math.round(chancesA));
-  const goalsB = Math.max(0, Math.round(chancesB));
-
-  resultEl.innerHTML = `
-    FINAL SCORE<br>
-    <strong>Team A ${goalsA} – ${goalsB} Team B</strong>
+  const stats=document.createElement("div");
+  stats.className="stats";
+  stats.innerHTML=`
+    <input placeholder="ATT">
+    <input placeholder="MID">
+    <input placeholder="DEF">
   `;
+
+  slot.appendChild(img);
+  slot.appendChild(stats);
+
+  const data={img:selected,att:0,mid:0,def:0,stats};
+  (team==="A"?teamAData:teamBData).push(data);
+
+  deck=deck.filter(c=>c!==selected);
+  selected=null;
+  picks++;
+  if(picks%2===0)deal();
 }
 
-/* ---------- INIT ---------- */
-buildTeam(teamAEl);
-buildTeam(teamBEl);
-dealPack();
+function startMatch(){
+  teamAData.forEach(p=>{
+    p.att=+p.stats.children[0].value||50;
+    p.mid=+p.stats.children[1].value||50;
+    p.def=+p.stats.children[2].value||50;
+  });
+  teamBData.forEach(p=>{
+    p.att=+p.stats.children[0].value||50;
+    p.mid=+p.stats.children[1].value||50;
+    p.def=+p.stats.children[2].value||50;
+  });
+
+  localStorage.setItem("teamA",JSON.stringify(teamAData));
+  localStorage.setItem("teamB",JSON.stringify(teamBData));
+  location.href="match.html";
+}
+
+buildTeam(teamA,"A");
+buildTeam(teamB,"B");
+deal();
 </script>
 
 </body>
