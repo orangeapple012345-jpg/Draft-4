@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FIFA Draft & Match</title>
+<title>FIFA Draft & Match Simulation</title>
 
 <style>
 body {
@@ -12,9 +12,11 @@ body {
   font-family: Arial, sans-serif;
   text-align: center;
 }
-h1, h2 { margin: 14px 0 6px; }
 
-/* ---------- PACK ---------- */
+h1, h2 {
+  margin: 14px 0 6px;
+}
+
 .pack {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -23,6 +25,7 @@ h1, h2 { margin: 14px 0 6px; }
   max-width: 360px;
   margin: auto;
 }
+
 .pack img {
   width: 100%;
   max-width: 90px;
@@ -30,24 +33,26 @@ h1, h2 { margin: 14px 0 6px; }
   cursor: pointer;
 }
 
-/* ---------- TEAMS ---------- */
 .team {
   max-width: 360px;
   margin: auto;
   padding-bottom: 12px;
 }
+
 .row {
   display: flex;
   justify-content: center;
   gap: 8px;
   margin: 5px 0;
 }
+
 .slot {
   width: 85px;
   height: 130px;
   border: 2px dashed #555;
   border-radius: 8px;
 }
+
 .slot img {
   width: 100%;
   height: 100%;
@@ -64,8 +69,12 @@ button {
   color: black;
   cursor: pointer;
 }
-#result { font-size: 18px; margin-bottom: 20px; }
-.small { opacity: 0.85; font-size: 12px; margin-top: 4px; }
+
+#result {
+  font-size: 16px;
+  margin-bottom: 20px;
+  white-space: pre-line;
+}
 </style>
 </head>
 
@@ -73,7 +82,6 @@ button {
 
 <h1>PACK</h1>
 <div class="pack" id="pack"></div>
-<div class="small" id="turnInfo"></div>
 
 <h2>TEAM A</h2>
 <div class="team" id="teamA"></div>
@@ -81,226 +89,177 @@ button {
 <h2>TEAM B</h2>
 <div class="team" id="teamB"></div>
 
-<button id="playBtn">PLAY MATCH</button>
+<button onclick="playMatch()">PLAY MATCH</button>
 <div id="result"></div>
 
 <script>
-/* =========================================================
-   1) ADD YOUR CARDS + RATINGS HERE (MANUAL DATABASE)
-   Key = image path in your repo
-   rating = the real rating you want that card to have
-   ========================================================= */
-const CARD_DB = {
-  "fifa-cards/marcelo10.png": { rating: 92 },
-  "fifa-cards/marcelo11.png": { rating: 93 },
-  "fifa-cards/marcelo12.png": { rating: 94 },
-  "fifa-cards/marcelo13.png": { rating: 95 },
+/* ======================================================
+   CARD DATABASE (YOU EDIT THIS)
+====================================================== */
 
-  "fifa-cards/vieira10.png": { rating: 94 },
-  "fifa-cards/vieira11.png": { rating: 95 },
-  "fifa-cards/vieira12.png": { rating: 96 },
-  "fifa-cards/vieira14.png": { rating: 97 },
+const ALL_CARDS = [
+  { img:"fifa-cards/messi20.png", name:"Messi", position:"ATT", rating:95 },
+  { img:"fifa-cards/ronaldo20.png", name:"Ronaldo", position:"ATT", rating:94 },
+  { img:"fifa-cards/neymar15.png", name:"Neymar", position:"ATT", rating:93 },
 
-  "fifa-cards/buffon10.png": { rating: 94 },
-  "fifa-cards/neuer10.png": { rating: 93 },
+  { img:"fifa-cards/xavi12.png", name:"Xavi", position:"MID", rating:91 },
+  { img:"fifa-cards/iniesta12.png", name:"Iniesta", position:"MID", rating:92 },
+  { img:"fifa-cards/modric13.png", name:"Modric", position:"MID", rating:91 },
 
-  "fifa-cards/messi10.png": { rating: 99 },
-  "fifa-cards/cristianoronaldo10.png": { rating: 98 },
+  { img:"fifa-cards/maldini13.png", name:"Maldini", position:"DEF", rating:94 },
+  { img:"fifa-cards/cannavaro12.png", name:"Cannavaro", position:"DEF", rating:92 },
+  { img:"fifa-cards/ramos14.png", name:"Ramos", position:"DEF", rating:91 },
 
-  // ✅ KEEP ADDING YOUR OWN...
-  // "fifa-cards/henry14.png": { rating: 96 },
-};
+  { img:"fifa-cards/neuer14.png", name:"Neuer", position:"GK", rating:92 },
+  { img:"fifa-cards/buffon13.png", name:"Buffon", position:"GK", rating:91 }
+];
 
-/* Build the card list automatically from the database */
-const allCards = Object.keys(CARD_DB);
+/* ======================================================
+   STATE
+====================================================== */
 
-/* ---------- SETTINGS ---------- */
-const PACK_SIZE = 6;     // you wanted 6
-const PICKS_PER_PACK = 2; // 1 pick Team A + 1 pick Team B each pack
-const TEAM_SIZE = 11;     // 11 players per team
-
-/* ---------- STATE ---------- */
-let deck = [...allCards];
+let deck = [...ALL_CARDS];
 let packCards = [];
 let selectedCard = null;
 let picksThisRound = 0;
-let currentTeam = "A";
 
-const teamAPlayers = [];
-const teamBPlayers = [];
+const teamA = [];
+const teamB = [];
 
-/* ---------- ELEMENTS ---------- */
 const packEl = document.getElementById("pack");
 const teamAEl = document.getElementById("teamA");
 const teamBEl = document.getElementById("teamB");
 const resultEl = document.getElementById("result");
-const playBtn = document.getElementById("playBtn");
-const turnInfo = document.getElementById("turnInfo");
 
-/* ---------- HELPERS ---------- */
-function shuffle(arr) {
-  // Fisher-Yates
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
+/* ======================================================
+   FORMATION
+====================================================== */
 
-function getRating(cardPath) {
-  return CARD_DB[cardPath]?.rating ?? 75; // fallback if you forgot to add one
-}
-
-function updateTurnInfo() {
-  const needA = TEAM_SIZE - teamAPlayers.length;
-  const needB = TEAM_SIZE - teamBPlayers.length;
-  turnInfo.textContent =
-    `Pick for Team ${currentTeam} • Remaining: Team A ${needA}, Team B ${needB}`;
-}
-
-/* ---------- FORMATION ---------- */
-function buildTeam(teamEl) {
-  teamEl.innerHTML = "";
-  const rows = [3,3,4,1]; // 4-3-3 + GK
-
-  rows.forEach(count => {
+function buildTeam(el, teamArr) {
+  el.innerHTML = "";
+  [3,3,4,1].forEach(count => {
     const row = document.createElement("div");
     row.className = "row";
 
     for (let i = 0; i < count; i++) {
       const slot = document.createElement("div");
       slot.className = "slot";
-      slot.onclick = () => placeCard(slot);
+      slot.onclick = () => placeCard(slot, teamArr);
       row.appendChild(slot);
     }
-    teamEl.appendChild(row);
+
+    el.appendChild(row);
   });
 }
 
-/* ---------- PACK ---------- */
+/* ======================================================
+   PACK LOGIC
+====================================================== */
+
 function dealPack() {
   packEl.innerHTML = "";
-  selectedCard = null;
   picksThisRound = 0;
-  currentTeam = "A";
+  selectedCard = null;
 
-  if (deck.length === 0) {
-    packEl.innerHTML = "<div style='grid-column:1/-1;padding:14px;'>No cards left</div>";
-    updateTurnInfo();
-    return;
-  }
+  deck.sort(() => Math.random() - 0.5);
+  packCards = deck.slice(0, 6);
 
-  // Shuffle deck each new pack (keeps it feeling random)
-  shuffle(deck);
-
-  // Take up to PACK_SIZE
-  packCards = deck.slice(0, Math.min(PACK_SIZE, deck.length));
-
-  packCards.forEach(src => {
+  packCards.forEach(card => {
     const img = document.createElement("img");
-    img.src = src;
-    img.alt = src;
-    img.onclick = () => selectCard(img);
+    img.src = card.img;
+    img.onclick = () => selectCard(card, img);
     packEl.appendChild(img);
   });
-
-  updateTurnInfo();
 }
 
-function selectCard(img) {
-  selectedCard = img.src;
-
-  // Reset opacity then dim selected
+function selectCard(card, img) {
+  selectedCard = card;
   [...packEl.children].forEach(i => i.style.opacity = 1);
   img.style.opacity = 0.4;
 }
 
-/* ---------- DRAFT PLACEMENT ---------- */
-function placeCard(slot) {
-  if (!selectedCard) return;
-  if (slot.innerHTML !== "") return;
+function placeCard(slot, teamArr) {
+  if (!selectedCard || slot.innerHTML) return;
 
-  // prevent picking after team full
-  if (currentTeam === "A" && teamAPlayers.length >= TEAM_SIZE) return;
-  if (currentTeam === "B" && teamBPlayers.length >= TEAM_SIZE) return;
-
-  // Place image in slot
   const img = document.createElement("img");
-  img.src = selectedCard;
+  img.src = selectedCard.img;
   slot.appendChild(img);
 
-  // Record pick
-  if (currentTeam === "A") teamAPlayers.push(selectedCard);
-  else teamBPlayers.push(selectedCard);
-
-  // Remove from deck entirely so it can't reappear
+  teamArr.push(selectedCard);
   deck = deck.filter(c => c !== selectedCard);
-
-  // Also remove from current pack UI by re-dealing replacement into the same pack:
-  // Instead of replacing only one card, your current design re-deals after 2 picks.
-  // We'll keep that behavior: after 2 picks, new pack.
   selectedCard = null;
   picksThisRound++;
 
-  // Switch team turn
-  currentTeam = currentTeam === "A" ? "B" : "A";
-  updateTurnInfo();
-
-  // After both teams have picked (2 picks), show a fresh pack
-  if (picksThisRound === PICKS_PER_PACK) {
-    dealPack();
-  }
-
-  // Enable match only when both complete
-  if (teamAPlayers.length === TEAM_SIZE && teamBPlayers.length === TEAM_SIZE) {
-    playBtn.disabled = false;
-  }
+  if (picksThisRound === 2) dealPack();
 }
 
-/* ---------- MATCH SIM (simple but weighted) ---------- */
-function teamPower(team) {
-  return team.reduce((sum, card) => sum + getRating(card), 0);
-}
-
-function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
+/* ======================================================
+   MATCH SIMULATION
+====================================================== */
 
 function playMatch() {
-  if (teamAPlayers.length < TEAM_SIZE || teamBPlayers.length < TEAM_SIZE) {
-    alert("Both teams must have 11 players first.");
+  if (teamA.length < 11 || teamB.length < 11) {
+    alert("Both teams must have 11 players");
     return;
   }
 
-  const powerA = teamPower(teamAPlayers);
-  const powerB = teamPower(teamBPlayers);
+  const simA = simulateTeam(teamA);
+  const simB = simulateTeam(teamB);
 
-  // Convert power into expected goals with randomness
-  // Higher power -> slightly higher chance & more goals
-  const baseA = powerA / (TEAM_SIZE * 100); // around 0.75–1.05 typically
-  const baseB = powerB / (TEAM_SIZE * 100);
+  let log = "";
 
-  // Simple Poisson-ish goals
-  const goalsA = clamp(Math.round((baseA * 2.2) + (Math.random() * 2.2)), 0, 7);
-  const goalsB = clamp(Math.round((baseB * 2.2) + (Math.random() * 2.2)), 0, 7);
+  const goalsA = Math.max(0, Math.round(simA.attack - simB.defence + rand(0,2)));
+  const goalsB = Math.max(0, Math.round(simB.attack - simA.defence + rand(0,2)));
 
-  const winner =
-    goalsA > goalsB ? "TEAM A WINS 🏆" :
-    goalsB > goalsA ? "TEAM B WINS 🏆" :
-    "DRAW 🤝";
+  log += goalLog("Team A", simA.attackers, goalsA);
+  log += goalLog("Team B", simB.attackers, goalsB);
 
-  resultEl.innerHTML = `
-    <div style="margin:8px 0;">Team Strength: A ${powerA} vs B ${powerB}</div>
-    <div style="font-size:22px;margin:10px 0;"><strong>Team A ${goalsA} – ${goalsB} Team B</strong></div>
-    <div style="margin:6px 0;">${winner}</div>
-  `;
+  log += `\nFINAL SCORE\nTeam A ${goalsA} - ${goalsB} Team B\n`;
+
+  if (goalsA > goalsB) log += "TEAM A WINS 🏆";
+  else if (goalsB > goalsA) log += "TEAM B WINS 🏆";
+  else log += "DRAW 🤝";
+
+  resultEl.textContent = log;
 }
 
-/* ---------- INIT ---------- */
-buildTeam(teamAEl);
-buildTeam(teamBEl);
-dealPack();
+function simulateTeam(team) {
+  const attackers = team.filter(p => p.position === "ATT");
+  const mids = team.filter(p => p.position === "MID");
+  const defs = team.filter(p => p.position === "DEF");
+  const gk = team.find(p => p.position === "GK");
 
-playBtn.onclick = playMatch;
-playBtn.disabled = true;
+  return {
+    attackers,
+    attack: avg(attackers)*1.2 + avg(mids)*0.6,
+    defence: avg(defs)*1.1 + (gk ? gk.rating : 70)
+  };
+}
+
+function goalLog(teamName, attackers, goals) {
+  let log = "";
+  for (let i = 0; i < goals; i++) {
+    const scorer = attackers[Math.floor(Math.random()*attackers.length)];
+    const minute = rand(1,90);
+    log += `${minute}' ⚽ ${teamName}: ${scorer.name}\n`;
+  }
+  return log;
+}
+
+/* ======================================================
+   HELPERS
+====================================================== */
+
+const avg = arr => arr.length ? arr.reduce((s,p)=>s+p.rating,0)/arr.length : 50;
+const rand = (a,b) => Math.floor(Math.random()*(b-a+1))+a;
+
+/* ======================================================
+   INIT
+====================================================== */
+
+buildTeam(teamAEl, teamA);
+buildTeam(teamBEl, teamB);
+dealPack();
 </script>
 
 </body>
