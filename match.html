@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2D Football Match Simulation</title>
+
+<style>
+body {
+  margin: 0;
+  background: #0b0b0b;
+  color: white;
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
+
+#ui {
+  padding: 10px;
+}
+
+canvas {
+  background: #1e7f3f;
+  display: block;
+  margin: auto;
+  border: 3px solid #fff;
+}
+</style>
+</head>
+
+<body>
+
+<div id="ui">
+  <h2>
+    TEAM A <span id="scoreA">0</span> – 
+    <span id="scoreB">0</span> TEAM B
+  </h2>
+  <p>Time: <span id="time">08:00</span></p>
+</div>
+
+<canvas id="game" width="360" height="600"></canvas>
+
+<script>
+/* ================== CONFIG ================== */
+const MATCH_LENGTH = 8 * 60; // 8 minutes real time (seconds)
+const FPS = 60;
+
+/* ================== TEAMS ================== */
+const teamA = {
+  attack: 85,
+  midfield: 88,
+  defence: 82,
+  gk: 84,
+  score: 0,
+  color: "blue"
+};
+
+const teamB = {
+  attack: 83,
+  midfield: 80,
+  defence: 86,
+  gk: 85,
+  score: 0,
+  color: "red"
+};
+
+/* ================== CANVAS ================== */
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+/* ================== GAME STATE ================== */
+let matchTime = MATCH_LENGTH;
+let possession = Math.random() < 0.5 ? teamA : teamB;
+
+/* ================== BALL ================== */
+const ball = {
+  x: canvas.width / 2,
+  y: canvas.height / 2,
+  vx: 0,
+  vy: 0
+};
+
+/* ================== PLAYERS ================== */
+function createPlayers(team, side) {
+  const players = [];
+  for (let i = 0; i < 5; i++) {
+    players.push({
+      x: canvas.width / 2 + (Math.random() * 80 - 40),
+      y: side === "top" ? 80 + i * 30 : canvas.height - 80 - i * 30,
+      team
+    });
+  }
+  return players;
+}
+
+const playersA = createPlayers(teamA, "bottom");
+const playersB = createPlayers(teamB, "top");
+
+/* ================== GAME LOGIC ================== */
+function decideAttack() {
+  const atk = possession.attack + Math.random() * 20;
+  const def = (possession === teamA ? teamB.defence : teamA.defence) + Math.random() * 20;
+
+  if (atk > def) {
+    shoot();
+  }
+}
+
+function shoot() {
+  const keeper = possession === teamA ? teamB.gk : teamA.gk;
+  const shotPower = possession.attack + Math.random() * 30;
+
+  if (shotPower > keeper + 10) {
+    goal();
+  } else {
+    possession = possession === teamA ? teamB : teamA;
+  }
+}
+
+function goal() {
+  possession.score++;
+  document.getElementById("scoreA").textContent = teamA.score;
+  document.getElementById("scoreB").textContent = teamB.score;
+
+  // Reset ball
+  ball.x = canvas.width / 2;
+  ball.y = canvas.height / 2;
+  ball.vx = 0;
+  ball.vy = 0;
+
+  possession = possession === teamA ? teamB : teamA;
+}
+
+/* ================== DRAW ================== */
+function drawPitch() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  ctx.strokeStyle = "#fff";
+  ctx.lineWidth = 2;
+
+  ctx.beginPath();
+  ctx.moveTo(0, canvas.height / 2);
+  ctx.lineTo(canvas.width, canvas.height / 2);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(canvas.width / 2, canvas.height / 2, 40, 0, Math.PI * 2);
+  ctx.stroke();
+}
+
+function drawPlayers(players) {
+  players.forEach(p => {
+    ctx.fillStyle = p.team.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Simple movement
+    p.x += Math.random() * 2 - 1;
+    p.y += Math.random() * 2 - 1;
+  });
+}
+
+function drawBall() {
+  ctx.fillStyle = "white";
+  ctx.beginPath();
+  ctx.arc(ball.x, ball.y, 4, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+/* ================== GAME LOOP ================== */
+let frame = 0;
+
+function loop() {
+  frame++;
+
+  if (frame % (FPS * 3) === 0) {
+    // Change possession via midfield
+    const midA = teamA.midfield + Math.random() * 20;
+    const midB = teamB.midfield + Math.random() * 20;
+    possession = midA > midB ? teamA : teamB;
+    decideAttack();
+  }
+
+  drawPitch();
+  drawPlayers(playersA);
+  drawPlayers(playersB);
+  drawBall();
+
+  if (matchTime > 0) {
+    matchTime -= 1 / FPS;
+    updateClock();
+    requestAnimationFrame(loop);
+  }
+}
+
+/* ================== CLOCK ================== */
+function updateClock() {
+  const mins = Math.floor(matchTime / 60);
+  const secs = Math.floor(matchTime % 60);
+  document.getElementById("time").textContent =
+    `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+}
+
+/* ================== START ================== */
+loop();
+</script>
+
+</body>
+</html>
