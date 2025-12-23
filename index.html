@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FIFA Draft</title>
+<title>FIFA Draft & Match</title>
 
 <style>
 body {
@@ -12,10 +12,7 @@ body {
   font-family: Arial, sans-serif;
   text-align: center;
 }
-
-h1 {
-  margin: 16px 0 8px;
-}
+h1, h2 { margin: 14px 0 6px; }
 
 /* ---------- PACK ---------- */
 .pack {
@@ -26,40 +23,49 @@ h1 {
   max-width: 360px;
   margin: auto;
 }
-
 .pack img {
   width: 100%;
-  max-width: 95px;
+  max-width: 90px;
   border-radius: 8px;
   cursor: pointer;
 }
 
-/* ---------- TEAM ---------- */
+/* ---------- TEAMS ---------- */
 .team {
   max-width: 360px;
   margin: auto;
-  padding-bottom: 20px;
+  padding-bottom: 12px;
 }
-
 .row {
   display: flex;
   justify-content: center;
-  gap: 10px;
-  margin: 6px 0;
+  gap: 8px;
+  margin: 5px 0;
 }
-
 .slot {
-  width: 90px;
-  height: 135px;
+  width: 85px;
+  height: 130px;
   border: 2px dashed #555;
   border-radius: 8px;
 }
-
 .slot img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
+
+button {
+  margin: 16px;
+  padding: 12px 20px;
+  font-size: 16px;
+  background: #1db954;
+  border: none;
+  border-radius: 6px;
+  color: black;
+  cursor: pointer;
+}
+#result { font-size: 18px; margin-bottom: 20px; }
+.small { opacity: 0.85; font-size: 12px; margin-top: 4px; }
 </style>
 </head>
 
@@ -67,254 +73,96 @@ h1 {
 
 <h1>PACK</h1>
 <div class="pack" id="pack"></div>
+<div class="small" id="turnInfo"></div>
 
-<h1>TEAM A</h1>
+<h2>TEAM A</h2>
 <div class="team" id="teamA"></div>
 
-<h1>TEAM B</h1>
+<h2>TEAM B</h2>
 <div class="team" id="teamB"></div>
 
-<script>
-/* ---------- CARD LIST ---------- */
-const allCards = [
-  "fifa-cards/marcelo10.png",
-  "fifa-cards/marcelo11.png",
-  "fifa-cards/marcelo12.png",
-  "fifa-cards/marcelo13.png",
-  "fifa-cards/vieira10.png",
-  "fifa-cards/vieira11.png",
-  "fifa-cards/vieira12.png",
-  "fifa-cards/vieira14.png",
-  "fifa-cards/busquets10.png",
-  "fifa-cards/busquets11.png",
-  "fifa-cards/busquets12.png",
-  "fifa-cards/busquets13.png",
-  "fifa-cards/lahm10.png",
-  "fifa-cards/lahm11.png",
-  "fifa-cards/lahm12.png",
-  "fifa-cards/lahm13.png",
-  "fifa-cards/cannavaro10.png",
-  "fifa-cards/cannavaro11.png",
-  "fifa-cards/cannavaro12.png",
-  "fifa-cards/cannavaro13.png",
-  "fifa-cards/nesta11.png",
-  "fifa-cards/nesta12.png",
-  "fifa-cards/nesta14.png",
-  "fifa-cards/nesta15.png",
-  "fifa-cards/ramos14.png",
-  "fifa-cards/ramos13.png",
-  "fifa-cards/ramos12.png",
-  "fifa-cards/ramos11.png",
-  "fifa-cards/ramos10.png",
-  "fifa-cards/etoo10.png",
-  "fifa-cards/etoo11.png",
-  "fifa-cards/etoo12.png",
-  "fifa-cards/etoo14.png",
-  "fifa-cards/silva14.png",
-  "fifa-cards/silva13.png",
-  "fifa-cards/silva11.png",
-  "fifa-cards/silva10.png",
-  "fifa-cards/messi10.png",
-  "fifa-cards/messi12.png",
-  "fifa-cards/messi13.png",
-  "fifa-cards/messi14.png",
-  "fifa-cards/messi15.png",
-  "fifa-cards/messi16.png",
-  "fifa-cards/messi17.png",
-  "fifa-cards/messi18.png",
-  "fifa-cards/messi19.png",
-  "fifa-cards/messi20.png",
-  "fifa-cards/cristianoronaldo10.png",
-  "fifa-cards/cristianoronaldo11.png",
-  "fifa-cards/cristianoronaldo12.png",
-  "fifa-cards/cristianoronaldo13.png",
-  "fifa-cards/cristianoronaldo14.png",
-  "fifa-cards/cristianoronaldo15.png",
-  "fifa-cards/cristianoronaldo16.png",
-  "fifa-cards/cristianoronaldo17.png",
-  "fifa-cards/cristianoronaldo18.png",
-  "fifa-cards/cristianoronaldo19.png",
-  "fifa-cards/cristianoronaldo20.png",
-  "fifa-cards/zidane10.png",
-  "fifa-cards/zidane11.png",
-  "fifa-cards/zidane12.png",
-  "fifa-cards/zidane13.png",
-  "fifa-cards/zidane14.png",
-  "fifa-cards/ronaldo10.png",
-  "fifa-cards/ronaldo11.png",
-  "fifa-cards/ronaldo12.png",
-  "fifa-cards/ronaldo13.png",
-  "fifa-cards/ronaldo14.png",
-  "fifa-cards/ronaldinho10.png",
-  "fifa-cards/ronaldinho11.png",
-  "fifa-cards/ronaldinho12.png",
-  "fifa-cards/ronaldinho13.png",
-  "fifa-cards/ronaldinho14.png",
-  "fifa-cards/iniesta10.png",
-  "fifa-cards/iniesta11.png",
-  "fifa-cards/iniesta12.png",
-  "fifa-cards/iniesta13.png",
-  "fifa-cards/iniesta14.png",
-  "fifa-cards/maldini10.png",
-  "fifa-cards/maldini12.png",
-  "fifa-cards/maldini13.png",
-  "fifa-cards/xavi10.png",
-  "fifa-cards/xavi11.png",
-  "fifa-cards/xavi12.png",
-  "fifa-cards/rivaldo10.png",
-  "fifa-cards/rivaldo11.png",
-  "fifa-cards/rivaldo12.png",
-  "fifa-cards/henry10.png",
-  "fifa-cards/henry11.png",
-  "fifa-cards/henry12.png",
-  "fifa-cards/henry13.png",
-  "fifa-cards/henry14.png",
-  "fifa-cards/cristianoronaldo21.png",
-  "fifa-cards/messi22.png",
-  "fifa-cards/zidane15.png",
-  "fifa-cards/suarez12.png",
-  "fifa-cards/suarez13.png",
-  "fifa-cards/suarez14.png",
-  "fifa-cards/suarez15.png",
-  "fifa-cards/suarez16.png",
-  "fifa-cards/neymar10.png",
-  "fifa-cards/neymar11.png",
-  "fifa-cards/neymar12.png",
-  "fifa-cards/neymar14.png",
-  "fifa-cards/neymar15.png",
-  "fifa-cards/lewandowski10.png",
-  "fifa-cards/lewandowski11.png",
-  "fifa-cards/lewandowski12.png",
-  "fifa-cards/lewandowski13.png",
-  "fifa-cards/lewandowski15.png",
-  "fifa-cards/modric10.png",
-  "fifa-cards/modric11.png",
-  "fifa-cards/modric12.png",
-  "fifa-cards/modric13.png",
-  "fifa-cards/neuer10.png",
-  "fifa-cards/neuer11.png",
-  "fifa-cards/neuer13.png",
-  "fifa-cards/neuer14.png",
-  "fifa-cards/buffon10.png",
-  "fifa-cards/buffon11.png",
-  "fifa-cards/buffon12.png",
-  "fifa-cards/buffon13.png",
-  "fifa-cards/kaka10.png",
-  "fifa-cards/kaka11.png",
-  "fifa-cards/kaka12.png",
-  "fifa-cards/kaka13.png",
-  "fifa-cards/kaka15.png",
-  "fifa-cards/figo10.png",
-  "fifa-cards/figo11.png",
-  "fifa-cards/figo13.png",
-  "fifa-cards/figo14.png",
-  "fifa-cards/rooney10.png",
-  "fifa-cards/rooney11.png",
-  "fifa-cards/rooney12.png",
-  "fifa-cards/rooney13.png",
-  "fifa-cards/benzema10.png",
-  "fifa-cards/benzema11.png",
-  "fifa-cards/benzema12.png",
-  "fifa-cards/benzema13.png",
-  "fifa-cards/pirlo10.png",
-  "fifa-cards/pirlo11.png",
-  "fifa-cards/pirlo12.png",
-  "fifa-cards/pirlo13.png",
-  "fifa-cards/robben10.png",
-  "fifa-cards/robben11.png",
-  "fifa-cards/robben12.png",
-  "fifa-cards/robben13.png",
-  "fifa-cards/bale10.png",
-  "fifa-cards/bale11.png",
-  "fifa-cards/bale12.png",
-  "fifa-cards/bale14.png",
-  "fifa-cards/mbappe10.png",
-  "fifa-cards/mbappe11.png",
-  "fifa-cards/mbappe12.png",
-  "fifa-cards/mbappe13.png",
-  "fifa-cards/totti10.png",
-  "fifa-cards/totti11.png",
-  "fifa-cards/totti12.png",
-  "fifa-cards/totti13.png",
-  "fifa-cards/carlos10.png",
-  "fifa-cards/carlos11.png",
-  "fifa-cards/carlos12.png",
-  "fifa-cards/carlos13.png",
-  "fifa-cards/maldini11.png",
-  "fifa-cards/aguero10.png",
-  "fifa-cards/aguero11.png",
-  "fifa-cards/aguero12.png",
-  "fifa-cards/aguero13.png",
-  "fifa-cards/redondo10.png",
-  "fifa-cards/redondo12.png",
-  "fifa-cards/redondo13.png",
-  "fifa-cards/redondo15.png",
-  "fifa-cards/cafu10.png",
-  "fifa-cards/cafu11.png",
-  "fifa-cards/cafu12.png",
-  "fifa-cards/cafu13.png",
-  "fifa-cards/zanetti10.png",
-  "fifa-cards/zanetti11.png",
-  "fifa-cards/zanetti12.png",
-  "fifa-cards/zanetti13.png",
-  "fifa-cards/alves10.png",
-  "fifa-cards/alves11.png",
-  "fifa-cards/alves12.png",
-  "fifa-cards/alves13.png",
-  "fifa-cards/kante10.png",
-  "fifa-cards/kante11.png",
-  "fifa-cards/kante12.png",
-  "fifa-cards/kante13.png",
-  "fifa-cards/shevchenko10.png",
-  "fifa-cards/shevchenko11.png",
-  "fifa-cards/shevchenko12.png",
-  "fifa-cards/shevchenko13.png",
-  "fifa-cards/casillas10.png",
-  "fifa-cards/casillas11.png",
-  "fifa-cards/casillas12.png",
-  "fifa-cards/casillas13.png",
-  "fifa-cards/nedved10.png",
-  "fifa-cards/nedved11.png",
-  "fifa-cards/nedved12.png",
-  "fifa-cards/cole10.png",
-  "fifa-cards/cole11.png",
-  "fifa-cards/cole12.png",
-  "fifa-cards/cole13.png",
-  "fifa-cards/cole14.png",
-  "fifa-cards/debruyne10.png",
-  "fifa-cards/debruyne11.png",
-  "fifa-cards/debruyne12.png",
-  "fifa-cards/debruyne13.png",
-  "fifa-cards/thuram10.png",
-  "fifa-cards/thuram11.png",
-  "fifa-cards/thuram12.png",
-  "fifa-cards/thuram13.png",
-  "fifa-cards/schmeichel10.png",
-  "fifa-cards/schmeichel11.png",
-  "fifa-cards/schmeichel12.png",
-  "fifa-cards/schmeichel13.png",
-  "fifa-cards/puyol10.png",
-  "fifa-cards/puyol11.png",
-  "fifa-cards/puyol12.png",
-  "fifa-cards/puyol13.png"
-  
-];
+<button id="playBtn">PLAY MATCH</button>
+<div id="result"></div>
 
+<script>
+/* =========================================================
+   1) ADD YOUR CARDS + RATINGS HERE (MANUAL DATABASE)
+   Key = image path in your repo
+   rating = the real rating you want that card to have
+   ========================================================= */
+const CARD_DB = {
+  "fifa-cards/marcelo10.png": { rating: 92 },
+  "fifa-cards/marcelo11.png": { rating: 93 },
+  "fifa-cards/marcelo12.png": { rating: 94 },
+  "fifa-cards/marcelo13.png": { rating: 95 },
+
+  "fifa-cards/vieira10.png": { rating: 94 },
+  "fifa-cards/vieira11.png": { rating: 95 },
+  "fifa-cards/vieira12.png": { rating: 96 },
+  "fifa-cards/vieira14.png": { rating: 97 },
+
+  "fifa-cards/buffon10.png": { rating: 94 },
+  "fifa-cards/neuer10.png": { rating: 93 },
+
+  "fifa-cards/messi10.png": { rating: 99 },
+  "fifa-cards/cristianoronaldo10.png": { rating: 98 },
+
+  // ✅ KEEP ADDING YOUR OWN...
+  // "fifa-cards/henry14.png": { rating: 96 },
+};
+
+/* Build the card list automatically from the database */
+const allCards = Object.keys(CARD_DB);
+
+/* ---------- SETTINGS ---------- */
+const PACK_SIZE = 6;     // you wanted 6
+const PICKS_PER_PACK = 2; // 1 pick Team A + 1 pick Team B each pack
+const TEAM_SIZE = 11;     // 11 players per team
+
+/* ---------- STATE ---------- */
 let deck = [...allCards];
 let packCards = [];
+let selectedCard = null;
 let picksThisRound = 0;
 let currentTeam = "A";
 
+const teamAPlayers = [];
+const teamBPlayers = [];
+
 /* ---------- ELEMENTS ---------- */
 const packEl = document.getElementById("pack");
-const teamA = document.getElementById("teamA");
-const teamB = document.getElementById("teamB");
+const teamAEl = document.getElementById("teamA");
+const teamBEl = document.getElementById("teamB");
+const resultEl = document.getElementById("result");
+const playBtn = document.getElementById("playBtn");
+const turnInfo = document.getElementById("turnInfo");
+
+/* ---------- HELPERS ---------- */
+function shuffle(arr) {
+  // Fisher-Yates
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function getRating(cardPath) {
+  return CARD_DB[cardPath]?.rating ?? 75; // fallback if you forgot to add one
+}
+
+function updateTurnInfo() {
+  const needA = TEAM_SIZE - teamAPlayers.length;
+  const needB = TEAM_SIZE - teamBPlayers.length;
+  turnInfo.textContent =
+    `Pick for Team ${currentTeam} • Remaining: Team A ${needA}, Team B ${needB}`;
+}
 
 /* ---------- FORMATION ---------- */
 function buildTeam(teamEl) {
   teamEl.innerHTML = "";
-
   const rows = [3,3,4,1]; // 4-3-3 + GK
+
   rows.forEach(count => {
     const row = document.createElement("div");
     row.className = "row";
@@ -325,7 +173,6 @@ function buildTeam(teamEl) {
       slot.onclick = () => placeCard(slot);
       row.appendChild(slot);
     }
-
     teamEl.appendChild(row);
   });
 }
@@ -333,53 +180,127 @@ function buildTeam(teamEl) {
 /* ---------- PACK ---------- */
 function dealPack() {
   packEl.innerHTML = "";
+  selectedCard = null;
   picksThisRound = 0;
   currentTeam = "A";
 
-  deck =
-  deck.sort(() => Math.random() - 0.5);
-  packCards = deck.slice(0, 6);
+  if (deck.length === 0) {
+    packEl.innerHTML = "<div style='grid-column:1/-1;padding:14px;'>No cards left</div>";
+    updateTurnInfo();
+    return;
+  }
+
+  // Shuffle deck each new pack (keeps it feeling random)
+  shuffle(deck);
+
+  // Take up to PACK_SIZE
+  packCards = deck.slice(0, Math.min(PACK_SIZE, deck.length));
 
   packCards.forEach(src => {
     const img = document.createElement("img");
     img.src = src;
+    img.alt = src;
     img.onclick = () => selectCard(img);
     packEl.appendChild(img);
   });
-}
 
-let selectedCard = null;
+  updateTurnInfo();
+}
 
 function selectCard(img) {
   selectedCard = img.src;
+
+  // Reset opacity then dim selected
   [...packEl.children].forEach(i => i.style.opacity = 1);
   img.style.opacity = 0.4;
 }
 
+/* ---------- DRAFT PLACEMENT ---------- */
 function placeCard(slot) {
-  if (!selectedCard || slot.innerHTML !== "") return;
+  if (!selectedCard) return;
+  if (slot.innerHTML !== "") return;
 
+  // prevent picking after team full
+  if (currentTeam === "A" && teamAPlayers.length >= TEAM_SIZE) return;
+  if (currentTeam === "B" && teamBPlayers.length >= TEAM_SIZE) return;
+
+  // Place image in slot
   const img = document.createElement("img");
   img.src = selectedCard;
   slot.appendChild(img);
 
-  deck = deck.filter(c => c !== selectedCard);
-  packCards = packCards.filter(c => c !== selectedCard);
+  // Record pick
+  if (currentTeam === "A") teamAPlayers.push(selectedCard);
+  else teamBPlayers.push(selectedCard);
 
+  // Remove from deck entirely so it can't reappear
+  deck = deck.filter(c => c !== selectedCard);
+
+  // Also remove from current pack UI by re-dealing replacement into the same pack:
+  // Instead of replacing only one card, your current design re-deals after 2 picks.
+  // We'll keep that behavior: after 2 picks, new pack.
   selectedCard = null;
   picksThisRound++;
 
+  // Switch team turn
   currentTeam = currentTeam === "A" ? "B" : "A";
+  updateTurnInfo();
 
-  if (picksThisRound === 2) {
+  // After both teams have picked (2 picks), show a fresh pack
+  if (picksThisRound === PICKS_PER_PACK) {
     dealPack();
+  }
+
+  // Enable match only when both complete
+  if (teamAPlayers.length === TEAM_SIZE && teamBPlayers.length === TEAM_SIZE) {
+    playBtn.disabled = false;
   }
 }
 
+/* ---------- MATCH SIM (simple but weighted) ---------- */
+function teamPower(team) {
+  return team.reduce((sum, card) => sum + getRating(card), 0);
+}
+
+function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
+
+function playMatch() {
+  if (teamAPlayers.length < TEAM_SIZE || teamBPlayers.length < TEAM_SIZE) {
+    alert("Both teams must have 11 players first.");
+    return;
+  }
+
+  const powerA = teamPower(teamAPlayers);
+  const powerB = teamPower(teamBPlayers);
+
+  // Convert power into expected goals with randomness
+  // Higher power -> slightly higher chance & more goals
+  const baseA = powerA / (TEAM_SIZE * 100); // around 0.75–1.05 typically
+  const baseB = powerB / (TEAM_SIZE * 100);
+
+  // Simple Poisson-ish goals
+  const goalsA = clamp(Math.round((baseA * 2.2) + (Math.random() * 2.2)), 0, 7);
+  const goalsB = clamp(Math.round((baseB * 2.2) + (Math.random() * 2.2)), 0, 7);
+
+  const winner =
+    goalsA > goalsB ? "TEAM A WINS 🏆" :
+    goalsB > goalsA ? "TEAM B WINS 🏆" :
+    "DRAW 🤝";
+
+  resultEl.innerHTML = `
+    <div style="margin:8px 0;">Team Strength: A ${powerA} vs B ${powerB}</div>
+    <div style="font-size:22px;margin:10px 0;"><strong>Team A ${goalsA} – ${goalsB} Team B</strong></div>
+    <div style="margin:6px 0;">${winner}</div>
+  `;
+}
+
 /* ---------- INIT ---------- */
-buildTeam(teamA);
-buildTeam(teamB);
+buildTeam(teamAEl);
+buildTeam(teamBEl);
 dealPack();
+
+playBtn.onclick = playMatch;
+playBtn.disabled = true;
 </script>
 
 </body>
