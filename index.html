@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FIFA Draft & Match Engine</title>
+<title>FIFA Draft & Match Simulation</title>
 
 <style>
 body {
@@ -36,13 +36,14 @@ h1, h2 {
 .team {
   max-width: 360px;
   margin: auto;
+  padding-bottom: 12px;
 }
 
 .row {
   display: flex;
   justify-content: center;
   gap: 8px;
-  margin: 6px 0;
+  margin: 5px 0;
 }
 
 .slot {
@@ -59,7 +60,7 @@ h1, h2 {
 }
 
 button {
-  margin: 14px;
+  margin: 16px;
   padding: 12px 20px;
   font-size: 16px;
   background: #1db954;
@@ -69,7 +70,7 @@ button {
 }
 
 #result {
-  margin: 10px;
+  margin-bottom: 20px;
   font-size: 18px;
 }
 </style>
@@ -90,41 +91,50 @@ button {
 <div id="result"></div>
 
 <script>
-/* ======================================================
-   PLAYER DATABASE (YOU EXPAND THIS)
-====================================================== */
+/* =====================================================
+   PLAYER DATABASE (TEMPLATES – EDIT FREELY)
+   ===================================================== */
 
 const players = [
-  // --- EXAMPLES (YOU EDIT VALUES FREELY) ---
-  { id:"messi10", name:"Messi", position:"ATT", attack:96, midfield:90, defense:40, image:"fifa-cards/messi10.png" },
-  { id:"messi20", name:"Messi", position:"ATT", attack:99, midfield:92, defense:45, image:"fifa-cards/messi20.png" },
+  // MESSI versions
+  { name:"Messi", role:"ATT", rating:92, img:"fifa-cards/messi10.png" },
+  { name:"Messi", role:"ATT", rating:94, img:"fifa-cards/messi14.png" },
+  { name:"Messi", role:"ATT", rating:96, img:"fifa-cards/messi20.png" },
 
-  { id:"cr710", name:"Cristiano Ronaldo", position:"ATT", attack:95, midfield:85, defense:45, image:"fifa-cards/cristianoronaldo10.png" },
-  { id:"cr720", name:"Cristiano Ronaldo", position:"ATT", attack:99, midfield:88, defense:48, image:"fifa-cards/cristianoronaldo20.png" },
+  // RONALDO (CR7)
+  { name:"Cristiano Ronaldo", role:"ATT", rating:93, img:"fifa-cards/cristianoronaldo14.png" },
+  { name:"Cristiano Ronaldo", role:"ATT", rating:95, img:"fifa-cards/cristianoronaldo20.png" },
 
-  { id:"zidane14", name:"Zidane", position:"MID", attack:88, midfield:96, defense:70, image:"fifa-cards/zidane14.png" },
+  // ZIDANE
+  { name:"Zidane", role:"MID", rating:94, img:"fifa-cards/zidane14.png" },
 
-  { id:"vieira14", name:"Vieira", position:"MID", attack:82, midfield:92, defense:90, image:"fifa-cards/vieira14.png" },
+  // RONALDINHO
+  { name:"Ronaldinho", role:"ATT", rating:93, img:"fifa-cards/ronaldinho14.png" },
 
-  { id:"puyol13", name:"Puyol", position:"DEF", attack:60, midfield:75, defense:96, image:"fifa-cards/puyol13.png" },
+  // VIEIRA
+  { name:"Vieira", role:"MID", rating:92, img:"fifa-cards/vieira14.png" },
 
-  { id:"schmeichel13", name:"Schmeichel", position:"GK", attack:10, midfield:40, defense:98, image:"fifa-cards/schmeichel13.png" },
+  // MALDINI
+  { name:"Maldini", role:"DEF", rating:94, img:"fifa-cards/maldini13.png" },
 
-  { id:"cole11", name:"Ashley Cole", position:"DEF", attack:65, midfield:75, defense:90, image:"fifa-cards/cole11.png" },
+  // RAMOS
+  { name:"Ramos", role:"DEF", rating:91, img:"fifa-cards/ramos14.png" },
 
-  { id:"debruyne13", name:"De Bruyne", position:"MID", attack:90, midfield:97, defense:70, image:"fifa-cards/debruyne13.png" },
+  // NEUER
+  { name:"Neuer", role:"GK", rating:92, img:"fifa-cards/neuer14.png" },
 
-  { id:"thuram13", name:"Thuram", position:"DEF", attack:60, midfield:78, defense:93, image:"fifa-cards/thuram13.png" }
+  // BUFFON
+  { name:"Buffon", role:"GK", rating:91, img:"fifa-cards/buffon13.png" }
 ];
 
-/* ======================================================
+/* =====================================================
    GAME STATE
-====================================================== */
+   ===================================================== */
 
 let deck = [...players];
-let pack = [];
-let selected = null;
-let picks = 0;
+let packCards = [];
+let selectedCard = null;
+let picksThisPack = 0;
 
 const teamAPlayers = [];
 const teamBPlayers = [];
@@ -134,34 +144,117 @@ const teamAEl = document.getElementById("teamA");
 const teamBEl = document.getElementById("teamB");
 const resultEl = document.getElementById("result");
 
-/* ======================================================
+/* =====================================================
    TEAM FORMATION (4-3-3 + GK)
-====================================================== */
+   ===================================================== */
 
-function buildTeam(el, team) {
+function buildTeam(el, teamArr) {
   el.innerHTML = "";
   [3,3,4,1].forEach(count => {
     const row = document.createElement("div");
     row.className = "row";
+
     for (let i = 0; i < count; i++) {
       const slot = document.createElement("div");
       slot.className = "slot";
-      slot.onclick = () => placePlayer(slot, team);
+      slot.onclick = () => placeCard(slot, teamArr);
       row.appendChild(slot);
     }
+
     el.appendChild(row);
   });
 }
 
-/* ======================================================
-   PACK LOGIC (6 PLAYERS)
-====================================================== */
+/* =====================================================
+   PACK LOGIC (6 cards, 2 picks → refresh)
+   ===================================================== */
 
 function dealPack() {
   packEl.innerHTML = "";
-  picks = 0;
-  deck.sort(() => Math.random() - 0.5);
-  pack = deck.slice(0, 6);
+  picksThisPack = 0;
+  selectedCard = null;
 
-  pack.forEach(p => {
-    const img = document.createElement
+  deck.sort(() => Math.random() - 0.5);
+  packCards = deck.slice(0, 6);
+
+  packCards.forEach(card => {
+    const img = document.createElement("img");
+    img.src = card.img;
+    img.onclick = () => selectCard(card, img);
+    packEl.appendChild(img);
+  });
+}
+
+function selectCard(card, img) {
+  selectedCard = card;
+  [...packEl.children].forEach(i => i.style.opacity = 1);
+  img.style.opacity = 0.4;
+}
+
+function placeCard(slot, teamArr) {
+  if (!selectedCard || slot.innerHTML) return;
+
+  const img = document.createElement("img");
+  img.src = selectedCard.img;
+  slot.appendChild(img);
+
+  teamArr.push(selectedCard);
+  deck = deck.filter(c => c !== selectedCard);
+
+  selectedCard = null;
+  picksThisPack++;
+
+  if (picksThisPack === 2) dealPack();
+}
+
+/* =====================================================
+   MATCH SIMULATION (ROLE-BASED)
+   ===================================================== */
+
+function calcTeam(team) {
+  return {
+    attack: team.filter(p=>p.role==="ATT").reduce((s,p)=>s+p.rating,0),
+    mid:    team.filter(p=>p.role==="MID").reduce((s,p)=>s+p.rating,0),
+    def:    team.filter(p=>p.role==="DEF").reduce((s,p)=>s+p.rating,0),
+    gk:     team.filter(p=>p.role==="GK").reduce((s,p)=>s+p.rating,0)
+  };
+}
+
+function playMatch() {
+  if (teamAPlayers.length < 11 || teamBPlayers.length < 11) {
+    alert("Both teams need 11 players");
+    return;
+  }
+
+  const A = calcTeam(teamAPlayers);
+  const B = calcTeam(teamBPlayers);
+
+  const chancesA = (A.attack*0.5 + A.mid*0.3) - (B.def*0.3 + B.gk*0.4);
+  const chancesB = (B.attack*0.5 + B.mid*0.3) - (A.def*0.3 + A.gk*0.4);
+
+  const goalsA = Math.max(0, Math.round(Math.random() * (chancesA/40)));
+  const goalsB = Math.max(0, Math.round(Math.random() * (chancesB/40)));
+
+  let result =
+    goalsA > goalsB ? "TEAM A WINS 🏆" :
+    goalsB > goalsA ? "TEAM B WINS 🏆" :
+    "DRAW 🤝";
+
+  resultEl.innerHTML = `
+    FINAL SCORE<br>
+    <strong>Team A ${goalsA} – ${goalsB} Team B</strong><br><br>
+    ${result}
+  `;
+}
+
+/* =====================================================
+   INIT
+   ===================================================== */
+
+buildTeam(teamAEl, teamAPlayers);
+buildTeam(teamBEl, teamBPlayers);
+dealPack();
+</script>
+
+</body>
+</html>
